@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: EUPL-1.2
+# Geparametriseerd worker-Job-manifest. Gerenderd door dispatch.sh via envsubst.
+# Variabelen: JOB_NAME, HABITAT_ROLE, HABITAT_CHANGE, HABITAT_REPO, HABITAT_RUN_ID,
+# HABITAT_MAX_BUDGET_USD, ACTIVE_DEADLINE_SECONDS, PAT_SECRET, WORKER_IMAGE.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ${JOB_NAME}
+  namespace: agents
+  labels:
+    app.kubernetes.io/part-of: habitat
+    habitat/component: worker
+    habitat/role: ${HABITAT_ROLE}
+    habitat/run-id: ${HABITAT_RUN_ID}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: ${ACTIVE_DEADLINE_SECONDS}
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: habitat
+        habitat/component: worker        # selecteert de worker-egress CiliumNetworkPolicy
+        habitat/role: ${HABITAT_ROLE}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: role-${HABITAT_ROLE}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: worker
+          image: ${WORKER_IMAGE}
+          env:
+            - { name: HABITAT_REPO,   value: "${HABITAT_REPO}" }
+            - { name: HABITAT_ROLE,   value: "${HABITAT_ROLE}" }
+            - { name: HABITAT_CHANGE, value: "${HABITAT_CHANGE}" }
+            - { name: HABITAT_RUN_ID, value: "${HABITAT_RUN_ID}" }
+            - { name: HABITAT_MAX_BUDGET_USD, value: "${HABITAT_MAX_BUDGET_USD}" }
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef: { name: anthropic-api-key, key: ANTHROPIC_API_KEY }
+            - name: GIT_PAT
+              valueFrom:
+                secretKeyRef: { name: ${PAT_SECRET}, key: GIT_PAT }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits:   { cpu: "2",  memory: 2Gi }
