@@ -1,0 +1,23 @@
+# Python / uv
+__pycache__/
+*.py[cod]
+.venv/
+.uv/
+
+# Secrets — nooit committen (alleen SOPS-versleutelde *.enc.yaml mogen wel)
+.env
+*.env
+*.agekey
+*.age
+age.key
+keys.txt
+*.dec.yaml
+*-decrypted.yaml
+
+# Gedecrypte kubeconfig / kubectl-artefacten
+kubeconfig
+*.kubeconfig
+
+# OS / editor
+.DS_Store
+*.swp
