@@ -36,9 +36,6 @@ spec:
             - { name: HABITAT_CHANGE, value: "${HABITAT_CHANGE}" }
             - { name: HABITAT_RUN_ID, value: "${HABITAT_RUN_ID}" }
             - { name: HABITAT_MAX_BUDGET_USD, value: "${HABITAT_MAX_BUDGET_USD}" }
-            - name: ANTHROPIC_API_KEY
-              valueFrom:
-                secretKeyRef: { name: anthropic-api-key, key: ANTHROPIC_API_KEY }
             - name: GIT_PAT
               valueFrom:
                 secretKeyRef: { name: ${PAT_SECRET}, key: GIT_PAT }
@@ -48,3 +45,12 @@ spec:
           resources:
             requests: { cpu: 250m, memory: 512Mi }
             limits:   { cpu: "2",  memory: 2Gi }
+          volumeMounts:
+            # sub-first auth: Claude-subscription-credentials read-only in de Job
+            - { name: claude-creds, mountPath: /var/run/claude, readOnly: true }
+      volumes:
+        - name: claude-creds
+          secret:
+            secretName: claude-credentials
+            items:
+              - { key: credentials.json, path: credentials.json }

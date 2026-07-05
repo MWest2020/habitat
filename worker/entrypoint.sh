@@ -8,11 +8,24 @@ log()  { printf '[habitat] %s\n' "$*" >&2; }
 fail() { log "FOUT: $*"; exit 2; }
 
 # 1. Verplichte env
-for v in HABITAT_REPO HABITAT_ROLE HABITAT_CHANGE HABITAT_RUN_ID ANTHROPIC_API_KEY GIT_PAT; do
+for v in HABITAT_REPO HABITAT_ROLE HABITAT_CHANGE HABITAT_RUN_ID GIT_PAT; do
   [ -n "${!v:-}" ] || fail "env $v ontbreekt"
 done
 MAX_BUDGET="${HABITAT_MAX_BUDGET_USD:-5.00}"
-export ANTHROPIC_API_KEY GIT_PAT
+export GIT_PAT
+
+# 1b. Auth — sub-first: gemounte Claude-subscription-credentials; anders ANTHROPIC_API_KEY
+CRED_SRC="${CLAUDE_CREDENTIALS_FILE:-/var/run/claude/credentials.json}"
+if [ -f "$CRED_SRC" ]; then
+  mkdir -p "$HOME/.claude"
+  install -m 600 "$CRED_SRC" "$HOME/.claude/.credentials.json"
+  log "auth: subscription-credentials"
+elif [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+  export ANTHROPIC_API_KEY
+  log "auth: ANTHROPIC_API_KEY"
+else
+  fail "geen auth: mount claude-credentials of zet ANTHROPIC_API_KEY"
+fi
 
 # 2. Repo-URL (accepteer 'owner/repo', een volledige URL, of een lokaal pad)
 case "$HABITAT_REPO" in

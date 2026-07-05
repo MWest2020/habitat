@@ -38,10 +38,10 @@ stil opnieuw proberen: één shot, één Job, één pod.
 `activeDeadlineSeconds` op de Job begrenst de wall-clock hard (kill). Samen dekken
 ze "duur" én "hangt".
 
-### Secrets via secretKeyRef, niet via de SA
+### Secrets via de pod-spec, niet via de SA
 De rol-SA heeft geen API-token en geen secret-leesrecht; de kubelet mount de
-secrets op basis van de pod-spec. Zo kan een worker zijn eigen `ANTHROPIC_API_KEY`
-en node-`GIT_PAT` gebruiken zonder de kube-API te kunnen bevragen.
+secrets op basis van de pod-spec. Zo kan een worker de gemounte Claude-credentials
+(sub-first) en zijn node-`GIT_PAT` gebruiken zonder de kube-API te kunnen bevragen.
 
 ## Parameters (env voor dispatch.sh / envsubst)
 `HABITAT_ROLE`, `HABITAT_CHANGE`, `HABITAT_REPO`, `HABITAT_RUN_ID`,

@@ -6,7 +6,8 @@ Een rol-run SHALL als K8s-Job in de namespace `agents` gestart worden vanuit een
 geparametriseerd template. De Job SHALL `restartPolicy: Never`, `backoffLimit: 0` en
 een `activeDeadlineSeconds` hebben, en het pod-label `habitat/component: worker`
 dragen zodat de egress-policy hem selecteert. De Job SHALL de rol-ServiceAccount
-gebruiken en `ANTHROPIC_API_KEY` + `GIT_PAT` via `secretKeyRef` krijgen.
+gebruiken, de Claude-subscription-credentials read-only mounten (sub-first), en
+`GIT_PAT` via `secretKeyRef` krijgen.
 
 #### Scenario: Dispatch van een builder-run
 

@@ -8,9 +8,9 @@ env in                          worker (K8s Job, in de kooi)                 uit
 HABITAT_REPO      ─┐   entrypoint.sh:                                ┌─ branch
 HABITAT_ROLE       │   1. git clone <repo> (HTTPS + PAT)             │   habitat/<rol>/<change>
 HABITAT_CHANGE     ├─▶ 2. claude -p "<rol>" --output-format json ────┼─ run-report.json
-HABITAT_RUN_ID     │      --max-budget-usd <cap>  (ANTHROPIC_API_KEY)│   (in de branch)
-ANTHROPIC_API_KEY ─┤   3. verdict = JSON.is_error/subtype            └─ stdout (kubectl logs)
-GIT_PAT (secret)  ─┘   4. git push branch + run-report.json
+HABITAT_RUN_ID     │      --max-budget-usd <cap>                     │   (in de branch)
+GIT_PAT (secret)   │   3. verdict = JSON.is_error/subtype            └─ stdout (kubectl logs)
+claude-creds(mount)┘   4. git push branch + run-report.json
 ```
 
 ## Beslissingen
@@ -34,6 +34,13 @@ URL, reflog of logs.
 preventieve kostenrem per change (env `HABITAT_MAX_BUDGET_USD`, default $5). De
 gerealiseerde `total_cost_usd` gaat in het run-rapport voor audit/escalatie.
 `add-dispatch` legt daar `activeDeadlineSeconds` als wall-clock-backstop overheen.
+
+### Auth: sub-first (subscription-credentials)
+Per de sub-first-lijn draait de worker op Claude-subscription-auth, niet op een
+API-key. Het `claude-credentials`-secret (de OAuth-credentials) wordt read-only op
+`/var/run/claude` gemount; de entrypoint kopieert het naar
+`~/.claude/.credentials.json` (0600). `ANTHROPIC_API_KEY` blijft een fallback.
+Token-refresh loopt over `*.anthropic.com` (in de egress-allowlist).
 
 ### Deps: alleen worker-eigen tools gebakken
 Het image bakt `claude`/`uv`/`git` op gepinde versies. Doel-repo-deps (de repo kan

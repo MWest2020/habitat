@@ -7,8 +7,9 @@ andere invoerkanalen gebruiken, zodat elke run reproduceerbaar is uit zijn Job-s
 
 De verplichte env-variabelen zijn: `HABITAT_REPO` (doelrepo, HTTPS-URL),
 `HABITAT_ROLE` (builder/reviewer/security), `HABITAT_CHANGE` (naam van de
-OpenSpec-change), `HABITAT_RUN_ID` (unieke run-identifier), `ANTHROPIC_API_KEY`
-(Claude-auth) en `GIT_PAT` (single-repo fine-grained PAT voor git).
+OpenSpec-change), `HABITAT_RUN_ID` (unieke run-identifier) en `GIT_PAT` (single-repo
+fine-grained PAT voor git). Claude-auth komt uit gemounte
+subscription-credentials (sub-first), niet uit een verplichte env-variabele.
 
 #### Scenario: Alle env aanwezig
 
@@ -47,8 +48,9 @@ De worker SHALL `claude -p` niet-interactief draaien met `--output-format json`,
 `--max-budget-usd`-kostenrem en een non-interactieve permission-mode, en SHALL succes
 uit het JSON-eindobject bepalen (`is_error`/`subtype`), niet uit de proces-exit-code.
 
-Auth SHALL via `ANTHROPIC_API_KEY` gaan; er SHALL geen afhankelijkheid zijn van een
-interactieve `~/.claude`-login.
+Auth SHALL sub-first zijn: gemounte Claude-subscription-credentials
+(`~/.claude/.credentials.json`), met `ANTHROPIC_API_KEY` als alternatief. Er SHALL
+geen interactieve login nodig zijn.
 
 #### Scenario: Geslaagde run
 

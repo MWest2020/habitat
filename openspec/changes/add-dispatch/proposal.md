@@ -12,8 +12,8 @@ Dit is de laatste schakel voor één volledige builder-loop.
   met `restartPolicy: Never`, `backoffLimit: 0` (agent-run niet idempotent),
   `activeDeadlineSeconds` (wall-clock-backstop), `terminationGracePeriodSeconds: 10`,
   `ttlSecondsAfterFinished`, SA per rol, en het label `habitat/component: worker`
-  zodat de egress-policy hem selecteert. Secrets via `secretKeyRef`
-  (`ANTHROPIC_API_KEY`, `GIT_PAT`).
+  zodat de egress-policy hem selecteert. Auth sub-first: Claude-subscription-
+  credentials read-only gemount; `GIT_PAT` via `secretKeyRef`.
 - **dispatch-script** (`dispatch/dispatch.sh`): rendert het template (envsubst),
   `kubectl apply`, streamt de logs, en leest `Job.status.conditions` om
   `Complete` te onderscheiden van `Failed`+`DeadlineExceeded` — niet uit de
