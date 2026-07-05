@@ -14,8 +14,9 @@
 
 ## 3. Verificatie (DoD)
 
-- [ ] 3.1 Image op GHCR (publiek, SHA-getagd) — prerequisite voor de cluster-run
-- [ ] 3.2 Secrets in `agents` (test: dummy anthropic + PAT; prod: SOPS)
+- [x] 3.0 Job-manifest server-side gevalideerd (`apply --dry-run=server`) tegen de cluster-API — geaccepteerd
+- [ ] 3.1 Image op GHCR (publiek, SHA-getagd) — GEBLOKKEERD: `gh`-token mist `write:packages` (Mark)
+- [x] 3.2 Test-secrets `anthropic-api-key` + `pat-node-01` in `agents` aangemaakt (dummy-waarden; prod: SOPS)
 - [ ] 3.3 Cluster-run: `dispatch.sh builder smoke MWest2020/habitat-testrepo` → Job draait, egress via worker-label, logs streamen, branch + `run-report.json` gepusht
 - [ ] 3.4 Status correct afgelezen (`Complete`/`Failed`)
 - [ ] 3.5 (na echte ANTHROPIC_API_KEY van Mark) verdict=ok met een echte `claude -p`
