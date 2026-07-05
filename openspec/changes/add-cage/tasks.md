@@ -1,37 +1,30 @@
 ## 1. Namespace + Kustomize-base
 
-- [ ] 1.1 `namespace: agents` als Kustomize-base (expliciet, geen Helm)
-- [ ] 1.2 `kustomization.yaml` die alle onderdelen van deze change bundelt
+- [x] 1.1 `namespace: agents` als Kustomize-base (expliciet, geen Helm)
+- [x] 1.2 `kustomization.yaml` die alle onderdelen van deze change bundelt
 
-## 2. Egress-proxy (Squid)
+## 2. Egress-policy (Cilium toFQDNs)
 
-- [ ] 2.1 Squid-deployment + service (poort 3128) in `agents`
-- [ ] 2.2 Statische domein-allowlist: `.anthropic.com`, github-HTTPS, `.pypi.org`, `.pythonhosted.org`, `.npmjs.org`
-- [ ] 2.3 Access-log aan (egress-audit); config als ConfigMap, diffbaar
+- [x] 2.1 Namespace-brede default-deny egress (k8s NetworkPolicy, `podSelector: {}`)
+- [x] 2.2 CiliumNetworkPolicy `worker-egress`: DNS naar kube-dns + `toFQDNs`-allowlist (anthropic, github, pypi, npm) over 443
+- [x] 2.3 Egress-audit via Hubble (draait al in het cluster; geen extra component)
+- [x] 2.4 Egress-test: allowlist-domein 200/404, geblokkeerd domein time-out (curl-exit 28), DNS werkt
 
-## 3. NetworkPolicy
+## 3. RBAC
 
-- [ ] 3.1 Default-deny egress voor pods in `agents`
-- [ ] 3.2 Allow egress naar CoreDNS (53) via namespace+pod-selector (niet ClusterIP)
-- [ ] 3.3 Allow egress naar de proxy-pod (3128); niets anders
-- [ ] 3.4 Egress-test: allowlist-domein bereikbaar, direct extern adres geweigerd, DNS werkt
+- [x] 3.1 ServiceAccount per rol (builder/reviewer/security), `automountServiceAccountToken: false`
+- [x] 3.2 Orchestrator-SA + Role/RoleBinding: Jobs CRUD in `agents` + pods/log lezen, verder niets
+- [x] 3.3 RBAC-test (`auth can-i` als orchestrator-SA): jobs/logs ja; secrets/kube-system/andere-ns/cluster nee
 
-## 4. RBAC
+## 4. SOPS+age (bootstrap door Mark)
 
-- [ ] 4.1 ServiceAccount per rol (builder/reviewer/security), minimaal
-- [ ] 4.2 Role/RoleBinding: rol-SA mag alleen API-key-secret + eigen node-PAT-secret referencen
-- [ ] 4.3 Orchestrator-SA: Jobs CRUD in `agents` + logs lezen, verder niets
-- [ ] 4.4 RBAC-test: orchestrator-SA kan geen vreemd secret / andere namespace
+- [x] 4.1 `.sops.yaml` met creation-rules (encrypt alleen `data`/`stringData`)
+- [x] 4.2 Secret-templates: `anthropic-api-key`, `pat-node-<n>` (`.example.yaml`)
+- [x] 4.3 Bootstrap-README: age-key genereren, `.enc.yaml` maken, decrypt-at-apply
+- [ ] 4.4 (Mark) echte age-key + PAT's aanmaken, `.enc.yaml` versleutelen en uitrollen
 
-## 5. SOPS+age
+## 5. Verificatie (DoD)
 
-- [ ] 5.1 `.sops.yaml` met creation-rules (encrypt alleen `data`/`stringData`)
-- [ ] 5.2 Secret-templates: `anthropic-api-key`, `pat-node-<n>` (versleuteld)
-- [ ] 5.3 Documenteer decrypt-at-apply-stap (`sops -d | kubectl apply -f -`), age-key alleen op orchestrator-host
-- [ ] 5.4 Secret-mounts: node-PAT read-only mode 0400; `ANTHROPIC_API_KEY` via `secretKeyRef`
-
-## 6. Verificatie (DoD)
-
-- [ ] 6.1 `kubectl apply -k` zet namespace + proxy + policies foutloos
-- [ ] 6.2 Egress-test slaagt (allowlist ja, rest nee, DNS ja)
-- [ ] 6.3 RBAC-test slaagt (orchestrator-SA strak begrensd)
+- [x] 5.1 `kubectl apply -k cage/` zet namespace + policies + RBAC foutloos (live)
+- [x] 5.2 Egress-test slaagt (allowlist ja, rest nee, DNS ja)
+- [x] 5.3 RBAC-test slaagt (orchestrator-SA strak begrensd)

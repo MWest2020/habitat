@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: EUPL-1.2
+# De kooi als één toepasbare eenheid: `kubectl apply -k cage/`.
+# Egress-filtering is Cilium-native (toFQDNs) — geen proxy. Secrets zitten hier
+# bewust NIET in: die gaan via decrypt-at-apply
+# (`sops -d cage/secrets/<naam>.enc.yaml | kubectl apply -f -`), niet via kustomize.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - networkpolicy.yaml
+  - ciliumnetworkpolicy.yaml
+  - rbac.yaml

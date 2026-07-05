@@ -10,14 +10,12 @@ fundament dat de rest (dispatch, audit) veronderstelt.
 ## What Changes
 
 - **Namespace `agents`** als Kustomize-base, expliciet, geen Helm.
-- **Egress-proxy (Squid)** met een statische domein-allowlist, want k3s draait
-  Flannel + kube-router (L3/L4-only) en kan geen FQDN-policies. Al het uitgaand
-  verkeer van workers loopt via deze ene proxy.
-- **Default-deny egress-NetworkPolicy**: een worker mag alleen naar CoreDNS (53) en
-  de proxy (3128). Eén egress-pad; ook git-over-HTTPS loopt door de proxy.
-- **RBAC**: een ServiceAccount per rol (minimaal) en een orchestrator-SA die alleen
-  Jobs mag CRUD'en in `agents` en logs mag lezen. Elke rol-SA mag alleen de eigen
-  node-PAT-secret en het API-key-secret referencen.
+- **Default-deny egress** (namespace-brede k8s NetworkPolicy) + een
+  **CiliumNetworkPolicy met `toFQDNs`** die precies de toegestane domeinen toestaat.
+  Het cluster draait Cilium (v1.19), dus domein-allowlisting is CNI-native — géén
+  egress-proxy nodig. Egress-audit komt uit Hubble (draait al).
+- **RBAC**: een ServiceAccount per rol (minimaal, zonder API-token) en een
+  orchestrator-SA die alleen Jobs mag CRUD'en in `agents` en logs mag lezen.
 - **SOPS+age** met één cluster-age-key: secrets versleuteld-at-rest in git, de
   orchestrator decrypt-at-apply. Node-intrekbaarheid via per-node PAT-secrets + RBAC.
 
@@ -25,8 +23,8 @@ fundament dat de rest (dispatch, audit) veronderstelt.
 
 ### New Capabilities
 
-- `network-isolation`: default-deny egress met precies twee toegestane bestemmingen
-  (CoreDNS + proxy) en een auditeerbare domein-allowlist in de proxy.
+- `network-isolation`: default-deny egress met een auditeerbare domein-allowlist,
+  CNI-native afgedwongen (Cilium `toFQDNs`); alleen allowlist-domeinen + DNS bereikbaar.
 - `rbac-isolation`: minimale ServiceAccounts per rol en een strak begrensde
   orchestrator-SA; geen toegang tot vreemde secrets of namespaces.
 - `secret-management`: SOPS+age met één cluster-age-key, decrypt-at-apply, en
@@ -38,9 +36,9 @@ fundament dat de rest (dispatch, audit) veronderstelt.
 
 ## Impact
 
-- Levert de namespace, proxy, policies en secret-structuur waarin de workers uit
+- Levert de namespace, policies en secret-structuur waarin de workers uit
   `add-worker-image` draaien en waarop `add-dispatch` Jobs plaatst.
-- Legt vast dat `HTTPS_PROXY`/`NO_PROXY` in workers gezet worden (de worker-image
-  veronderstelt dit al).
+- Workers hebben géén proxy-plumbing nodig: egress is direct maar CNI-gefilterd op
+  FQDN. Workers dragen het label `habitat/component: worker` zodat de policy hen selecteert.
 - De egress-allowlist bevat github + anthropic + pypi + npm; image-pulls (ghcr.io)
-  lopen buiten de pod-netpol om (kubelet/containerd) en worden niet gepolicyed.
+  lopen buiten de pod-policy om (kubelet/containerd) en worden niet gepolicyed.

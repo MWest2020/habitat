@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: EUPL-1.2
+# Namespace-brede default-deny egress (standaard k8s NetworkPolicy, ook door Cilium
+# afgedwongen). Elke pod in `agents` mag standaard niets naar buiten; de toegestane
+# uitzonderingen voor workers staan in ciliumnetworkpolicy.yaml (toFQDNs). Policies
+# zijn additief: een niet-gelabelde pod houdt hierdoor nul egress.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: agents
+spec:
+  podSelector: {}
+  policyTypes: [Egress]

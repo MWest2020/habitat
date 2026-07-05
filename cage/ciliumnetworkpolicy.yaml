@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: EUPL-1.2
+# Egress-allowlist voor workers, native in Cilium (v1.19+): default-deny + precies
+# de toegestane FQDN's. Geen proxy nodig — de CNI filtert op domeinnaam via zijn
+# DNS-proxy. Egress-audit komt uit Hubble (draait al in dit cluster).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: worker-egress
+  namespace: agents
+spec:
+  endpointSelector:
+    matchLabels:
+      habitat/component: worker
+  egress:
+    # DNS via kube-dns; de dns-rules laten Cilium de FQDN→IP-mapping leren
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - { port: "53", protocol: ANY }
+          rules:
+            dns:
+              - matchPattern: "*"
+    # De allowlist: alleen deze domeinen, alleen over 443 (HTTPS + git-over-HTTPS)
+    - toFQDNs:
+        - matchName: "api.anthropic.com"
+        - matchPattern: "*.anthropic.com"
+        - matchName: "github.com"
+        - matchPattern: "*.github.com"
+        - matchPattern: "*.githubusercontent.com"
+        - matchName: "pypi.org"
+        - matchPattern: "*.pypi.org"
+        - matchName: "files.pythonhosted.org"
+        - matchPattern: "*.pythonhosted.org"
+        - matchName: "registry.npmjs.org"
+        - matchPattern: "*.npmjs.org"
+      toPorts:
+        - ports:
+            - { port: "443", protocol: TCP }

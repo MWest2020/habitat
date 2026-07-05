@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: EUPL-1.2
+# Minimale RBAC. Rol-SA's krijgen GEEN API-token (automount uit) en geen rechten:
+# een worker praat nooit met de kube-API, hij draait alleen claude+git. De
+# orchestrator-SA mag precies genoeg om te dispatchen en logs te lezen.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: role-builder
+  namespace: agents
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: role-reviewer
+  namespace: agents
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: role-security
+  namespace: agents
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: orchestrator
+  namespace: agents
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: orchestrator
+  namespace: agents
+rules:
+  # Jobs CRUD'en in de namespace
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  # Pods vinden + hun logs streamen
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  # Bewust NIET: secrets, andere namespaces, cluster-scope. Secret-uitrol
+  # (sops -d | kubectl apply) gebeurt met een admin-kubeconfig, niet met deze SA.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: orchestrator
+  namespace: agents
+subjects:
+  - kind: ServiceAccount
+    name: orchestrator
+    namespace: agents
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: orchestrator

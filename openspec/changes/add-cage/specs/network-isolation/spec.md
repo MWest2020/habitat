@@ -1,55 +1,55 @@
 ## ADDED Requirements
 
-### Requirement: Default-deny egress met twee toegestane bestemmingen
+### Requirement: Default-deny egress in de namespace
 
-De namespace `agents` SHALL een default-deny egress-NetworkPolicy hebben. Een
-worker-pod SHALL uitsluitend egress mogen naar CoreDNS (poort 53) en de
-egress-proxy (poort 3128); al het overige uitgaand verkeer SHALL geweigerd worden.
+De namespace `agents` SHALL een default-deny egress-policy hebben die elke pod
+zonder expliciete toestemming nul uitgaand verkeer geeft. Toegestane uitzonderingen
+SHALL alleen gelden voor pods met het label `habitat/component: worker`.
 
-CoreDNS SHALL gematcht worden via namespace- en pod-selector, niet via de ClusterIP.
+#### Scenario: Niet-gelabelde pod heeft geen egress
 
-#### Scenario: Verkeer naar de proxy is toegestaan
+- **WHEN** een pod zonder de worker-allow-policy egress probeert
+- **THEN** wordt al zijn uitgaand verkeer geweigerd
 
-- **WHEN** een worker-pod een HTTP(S)-verzoek via de proxy stuurt
-- **THEN** slaagt het verzoek
+#### Scenario: DNS blijft werken voor workers
 
-#### Scenario: Direct internetverkeer wordt geweigerd
+- **WHEN** de default-deny actief is
+- **THEN** kan een worker namen resolven via kube-dns
 
-- **WHEN** een worker-pod rechtstreeks (buiten de proxy om) een extern adres benadert
-- **THEN** wordt de verbinding geweigerd
+### Requirement: Domein-allowlist, CNI-native afgedwongen
 
-#### Scenario: DNS blijft werken
-
-- **WHEN** de default-deny egress actief is
-- **THEN** kan de worker namen resolven via CoreDNS op poort 53
-
-### Requirement: Domein-allowlist in de egress-proxy
-
-De egress-proxy SHALL een statische domein-allowlist afdwingen die precies de
-benodigde bestemmingen bevat: `.anthropic.com`, github-HTTPS-hosts (`github.com`,
-`.githubusercontent.com`, `codeload.github.com`), `.pypi.org`, `.pythonhosted.org`
-en `.npmjs.org`. Verzoeken naar andere domeinen SHALL geweigerd worden.
-
-De proxy SHALL een access-log bijhouden zodat elk uitgaand verzoek achteraf
-reconstrueerbaar is.
+Uitgaand verkeer van een worker SHALL beperkt zijn tot een expliciete
+domein-allowlist, afgedwongen door de CNI (Cilium `toFQDNs`), zonder egress-proxy.
+De allowlist SHALL bevatten: `*.anthropic.com` (incl. `api.anthropic.com`),
+`*.github.com` + `*.githubusercontent.com`, `*.pypi.org` + `*.pythonhosted.org`,
+en `*.npmjs.org`. Verkeer naar andere domeinen SHALL geweigerd worden.
 
 #### Scenario: Toegestaan domein
 
-- **WHEN** een worker via de proxy `github.com` of `api.anthropic.com` benadert
-- **THEN** staat de proxy het verzoek toe en logt het
+- **WHEN** een worker `github.com` of `api.anthropic.com` over 443 benadert
+- **THEN** slaagt de verbinding
 
 #### Scenario: Niet-toegestaan domein
 
-- **WHEN** een worker via de proxy een domein buiten de allowlist benadert
-- **THEN** weigert de proxy het verzoek en logt de weigering
+- **WHEN** een worker een domein buiten de allowlist benadert
+- **THEN** wordt de verbinding door de CNI gedropt (geen response, time-out)
+
+### Requirement: Egress observeerbaar voor audit
+
+Toegestane en geweigerde egress-flows van een worker SHALL achteraf observeerbaar
+zijn (Hubble), zodat elk uitgaand verzoek reconstrueerbaar is.
+
+#### Scenario: Flow zichtbaar
+
+- **WHEN** een worker een verbinding maakt of een verbinding gedropt wordt
+- **THEN** is die flow terug te zien in de flow-observability van het cluster
 
 ### Requirement: Image-pulls vallen buiten de pod-policy
 
-De NetworkPolicy en de proxy-allowlist SHALL geen voorziening voor image-pulls
-(`ghcr.io`) bevatten, omdat pulls door kubelet/containerd op de node gebeuren en
-niet onder de pod-egress vallen.
+De egress-policy SHALL geen voorziening voor image-pulls (`ghcr.io`) bevatten, omdat
+pulls door kubelet/containerd op de node gebeuren en niet onder de pod-egress vallen.
 
 #### Scenario: Worker-image wordt gepulld
 
 - **WHEN** een node de worker-image van GHCR pullt
-- **THEN** verloopt dat buiten de pod-NetworkPolicy en de proxy om
+- **THEN** verloopt dat buiten de pod-egress-policy om
