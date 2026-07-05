@@ -43,9 +43,9 @@ belanden dat in reflog of logs terechtkomt.
 
 ### Requirement: Aanroep van claude -p en succesbepaling
 
-De worker SHALL `claude -p` niet-interactief draaien met `--output-format json` en
-een `--max-turns`-begrenzing, en SHALL succes uit het JSON-eindobject bepalen
-(`is_error`/`subtype`), niet uit de proces-exit-code.
+De worker SHALL `claude -p` niet-interactief draaien met `--output-format json`, een
+`--max-budget-usd`-kostenrem en een non-interactieve permission-mode, en SHALL succes
+uit het JSON-eindobject bepalen (`is_error`/`subtype`), niet uit de proces-exit-code.
 
 Auth SHALL via `ANTHROPIC_API_KEY` gaan; er SHALL geen afhankelijkheid zijn van een
 interactieve `~/.claude`-login.
@@ -55,9 +55,10 @@ interactieve `~/.claude`-login.
 - **WHEN** het JSON-eindobject `is_error: false` heeft
 - **THEN** merkt de worker de run als geslaagd en gaat door naar push
 
-#### Scenario: Max-turns bereikt
+#### Scenario: Kostenrem bereikt
 
-- **WHEN** `claude -p` de max-turns-grens raakt (non-nul exit, maar wel JSON)
+- **WHEN** `claude -p` de `--max-budget-usd`-grens raakt (mogelijk non-nul exit, maar
+  wel JSON)
 - **THEN** leest de worker het `subtype`/`is_error`-signaal uit de JSON
 - **AND** merkt hij de run als niet-geslaagd, niet als crash
 

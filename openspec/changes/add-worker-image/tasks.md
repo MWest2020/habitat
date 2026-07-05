@@ -1,28 +1,30 @@
 ## 1. Containerfile
 
-- [ ] 1.1 Kies en pin een base-image (expliciete digest of versie-tag, nooit `latest`)
-- [ ] 1.2 Installeer `git` + `uv` (gepind) en Claude Code headless (gepinde versie)
-- [ ] 1.3 SPDX-header + minimale, non-root user; geen doel-repo-deps bakken
-- [ ] 1.4 Zet `entrypoint.sh` als ENTRYPOINT
+- [x] 1.1 Base-image gepind (`node:22.11.0-bookworm-slim`), nooit `latest`
+- [x] 1.2 `git` + `uv` (gepind via COPY uit `ghcr.io/astral-sh/uv:0.11.15`) + Claude Code (`@anthropic-ai/claude-code@2.1.201`) + `jq`
+- [x] 1.3 SPDX-header + non-root user (`worker`, uid 10001), `/work` schrijfbaar
+- [x] 1.4 `entrypoint.sh` als ENTRYPOINT
 
 ## 2. entrypoint.sh (≤200 regels)
 
-- [ ] 2.1 Valideer verplichte env; faal vroeg en leesbaar bij ontbreken
-- [ ] 2.2 Configureer git credential zó dat de PAT niet in URL/reflog/logs lekt
-- [ ] 2.3 Clone `HABITAT_REPO` over HTTPS via `HTTPS_PROXY`
-- [ ] 2.4 Draai `claude -p "<rol>" --output-format json --max-turns N` met `ANTHROPIC_API_KEY`
-- [ ] 2.5 Bepaal verdict uit JSON `is_error`/`subtype` (defensieve parser), niet uit exit-code
-- [ ] 2.6 Schrijf `run-report.json` (rol, change, run-id, verdict, `total_cost_usd`, turns, timestamps)
-- [ ] 2.7 Commit + push branch `habitat/<rol>/<change>` incl. `run-report.json`; push nooit `main`
+- [x] 2.1 Valideer verplichte env; faal vroeg en leesbaar bij ontbreken
+- [x] 2.2 Git credential-helper leest PAT uit env — niet in URL/reflog/config
+- [x] 2.3 Clone `HABITAT_REPO` over HTTPS (owner/repo, volledige URL of pad)
+- [x] 2.4 Draai `claude -p --output-format json --permission-mode bypassPermissions --max-budget-usd`
+- [x] 2.5 Verdict uit JSON via `if .is_error == false` (niet `// true` — jq-valkuil), niet uit exit-code
+- [x] 2.6 Schrijf `run-report.json` (rol, change, run-id, verdict, `total_cost_usd`, turns, exit, timestamp)
+- [x] 2.7 Commit + push branch `habitat/<rol>/<change>` incl. `run-report.json`; nooit `main`
 
 ## 3. GitHub Actions build → GHCR
 
-- [ ] 3.1 Workflow `.github/workflows/worker-image.yml`, trigger op Containerfile/entrypoint-wijziging
-- [ ] 3.2 Build + push naar `ghcr.io/mwest2020/habitat-worker:${{ github.sha }}`, publiek
-- [ ] 3.3 Bevestig dat er geen `latest`-tag wordt gepubliceerd
+- [x] 3.1 Workflow `.github/workflows/worker-image.yml`, trigger op `worker/**`-wijziging
+- [x] 3.2 Build + push naar `ghcr.io/mwest2020/habitat-worker:${{ github.sha }}`, geen `latest`
+- [ ] 3.3 (na push) CI-run groen + package-zichtbaarheid op publiek zetten (eenmalig, Mark)
 
 ## 4. Verificatie (DoD)
 
-- [ ] 4.1 Lokale rook-test: `docker run` met de env-set + test-PAT tegen een testrepo
-- [ ] 4.2 Bevestig: branch gepusht, `run-report.json` aanwezig, PAT nergens gelekt
-- [ ] 4.3 Bevestig: image op GHCR per SHA getagd en herleidbaar naar de commit
+- [x] 4.1 Lokale smoke: image gebouwd, tools aanwezig, non-root (laag 1)
+- [x] 4.2 Echt `claude -p --output-format json` levert `is_error`/`total_cost_usd`/`num_turns`; `--max-budget-usd` werkt (laag 2)
+- [x] 4.3 PAT-over-HTTPS clone van private repo in-container; PAT niet gelekt (laag 3a)
+- [x] 4.4 Volledige entrypoint end-to-end: branch + `run-report.json` gepusht, verdict correct (laag 3b)
+- [ ] 4.5 (add-dispatch) échte end-to-end op een GitHub-testrepo met echte `claude -p` in een K8s-Job

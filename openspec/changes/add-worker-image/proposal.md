@@ -14,8 +14,8 @@ contract. Deze change legt dat contract vast: wat gaat erin (env), wat komt erui
   doel-repo-deps worden runtime geïnstalleerd (via de proxy uit `add-cage`).
 - **entrypoint** dat env leest (`HABITAT_REPO`, `HABITAT_ROLE`, `HABITAT_CHANGE`,
   `HABITAT_RUN_ID`), de doelrepo over HTTPS clonet met een single-repo
-  fine-grained PAT, `claude -p --output-format json --max-turns N` draait, succes
-  bepaalt uit de JSON (`is_error`/`subtype`) en niet uit de exit-code, de branch
+  fine-grained PAT, `claude -p --output-format json --max-budget-usd <cap>` draait,
+  succes bepaalt uit de JSON (`is_error`/`subtype`) en niet uit de exit-code, de branch
   `habitat/<rol>/<change>` pusht en een `run-report.json` mee de branch in schrijft.
 - **GitHub Actions-workflow** die de image bouwt en naar GHCR pusht, publiek,
   getagd per commit-SHA, nooit `latest`.
