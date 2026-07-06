@@ -45,6 +45,14 @@ log "clone ${REPO_URL}"
 git clone --depth 50 "$REPO_URL" "$WORK"
 cd "$WORK"
 
+# Optioneel: begin vanaf een bestaande branch (bv. reviewer/security bovenop de
+# builder-branch) i.p.v. de default branch.
+if [ -n "${HABITAT_BASE_BRANCH:-}" ]; then
+  log "basis-branch: ${HABITAT_BASE_BRANCH}"
+  git fetch --depth 50 origin "$HABITAT_BASE_BRANCH"
+  git checkout -B "$HABITAT_BASE_BRANCH" FETCH_HEAD
+fi
+
 BRANCH="habitat/${HABITAT_ROLE}/${HABITAT_CHANGE}"
 git checkout -b "$BRANCH"
 
