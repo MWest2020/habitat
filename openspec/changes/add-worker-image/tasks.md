@@ -27,4 +27,4 @@
 - [x] 4.2 Echt `claude -p --output-format json` levert `is_error`/`total_cost_usd`/`num_turns`; `--max-budget-usd` werkt (laag 2)
 - [x] 4.3 PAT-over-HTTPS clone van private repo in-container; PAT niet gelekt (laag 3a)
 - [x] 4.4 Volledige entrypoint end-to-end: branch + `run-report.json` gepusht, verdict correct (laag 3b)
-- [ ] 4.5 (add-dispatch) échte end-to-end op een GitHub-testrepo met echte `claude -p` in een K8s-Job
+- [x] 4.5 Échte end-to-end op GitHub-testrepo met echte `claude -p` in een K8s-Job — GROEN (verdict=ok, branch + run-report gepusht)

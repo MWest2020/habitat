@@ -15,8 +15,13 @@
 ## 3. Verificatie (DoD)
 
 - [x] 3.0 Job-manifest server-side gevalideerd (`apply --dry-run=server`) tegen de cluster-API — geaccepteerd
-- [ ] 3.1 Image op GHCR (publiek, SHA-getagd) — GEBLOKKEERD: `gh`-token mist `write:packages` (Mark)
-- [x] 3.2 Test-secret `pat-node-01` in `agents` (dummy); `claude-credentials` uit subscription (prod: SOPS)
-- [ ] 3.3 Cluster-run: `dispatch.sh builder smoke MWest2020/habitat-testrepo` → Job draait, egress via worker-label, logs streamen, branch + `run-report.json` gepusht
-- [ ] 3.4 Status correct afgelezen (`Complete`/`Failed`)
-- [ ] 3.5 Groen: verdict=ok met een echte `claude -p` via subscription-credentials in de Job
+- [x] 3.1 Image op GHCR (SHA-getagd), door de nodes gepulld via `ghcr-pull` pull-secret
+- [x] 3.2 Secrets in `agents`: `claude-credentials` (subscription) + `pat-node-01` (gh-token); prod: SOPS
+- [x] 3.3 Cluster-run: `dispatch.sh builder smoke MWest2020/habitat-testrepo` → Job op node, egress via worker-label, branch + `run-report.json` gepusht
+- [x] 3.4 Status correct afgelezen (`Complete=CompletionsReached`)
+- [x] 3.5 GROEN: verdict=ok, echte `claude -p` (7 turns, $0.19) via subscription-credentials; HELLO.md +1 regel
+
+## 4. Randvoorwaarden (ontdekt tijdens live run)
+
+- [x] 4.1 Node-VM's vereisen AVX2 (Bun-runtime) → Proxmox CPU-type `host` (Mark, gedaan)
+- [ ] 4.2 Subscription-token verloopt (~8u) → refresh-strategie voor geplande runs (open)
