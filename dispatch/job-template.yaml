@@ -26,6 +26,9 @@ spec:
       restartPolicy: Never
       serviceAccountName: role-${HABITAT_ROLE}
       automountServiceAccountToken: false
+      # privé GHCR-image: pull-secret op elke rol-Job (weg te laten als het package publiek is)
+      imagePullSecrets:
+        - name: ghcr-pull
       terminationGracePeriodSeconds: 10
       containers:
         - name: worker

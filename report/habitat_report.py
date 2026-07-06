@@ -135,9 +135,10 @@ async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncod
  for(const e of CHAIN){const calc=await sha(payload(e));
   const ok=calc===e.entry_hash && e.prev_hash===prev;
   const tr=document.createElement("tr");
-  tr.innerHTML=`<td>${e.run_id}</td><td>${e.role}</td><td>${e.verdict}</td>`+
-   `<td><code>${(e.entry_hash||"").slice(0,12)}…</code></td>`+
-   `<td class="${ok?'v-ok':'v-bad'}">${ok?'\\u2713 geldig':'\\u2717 gebroken'}</td>`;
+  // textContent (nooit innerHTML) — audit-waarden worden niet als HTML uitgevoerd
+  const mk=(t,cls)=>{const td=document.createElement("td");td.textContent=t;if(cls)td.className=cls;tr.appendChild(td)};
+  mk(e.run_id);mk(e.role);mk(e.verdict);mk((e.entry_hash||"").slice(0,12)+"\\u2026");
+  mk(ok?"\\u2713 geldig":"\\u2717 gebroken", ok?"v-ok":"v-bad");
   tb.appendChild(tr);prev=e.entry_hash;}
 })();
 </script></body></html>"""
