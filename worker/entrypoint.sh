@@ -79,19 +79,14 @@ else
 fi
 log "verdict=${VERDICT} subtype=${SUBTYPE} cost=${COST} turns=${TURNS}"
 
-# 6. run-report.json in de branch — duurzame audit, los van kubectl logs
+# 6. Stage de agent-wijziging, genereer hash-chained audit + HTML-run-rapport
+git add -A
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-jq -n \
-  --arg role "$HABITAT_ROLE"   --arg change "$HABITAT_CHANGE" \
-  --arg run_id "$HABITAT_RUN_ID" --arg repo "$REPO_URL" \
-  --arg verdict "$VERDICT"     --arg subtype "$SUBTYPE" \
-  --arg cost "$COST"           --arg turns "$TURNS" \
-  --arg exit "$CLAUDE_EXIT"    --arg ts "$NOW" \
-  '{role:$role, change:$change, run_id:$run_id, repo:$repo,
-    verdict:$verdict, subtype:$subtype,
-    total_cost_usd:($cost|tonumber?), num_turns:($turns|tonumber?),
-    claude_exit:($exit|tonumber), finished_at:$ts}' \
-  > run-report.json
+python3 /opt/habitat/report/habitat_report.py \
+  --repo-dir . --role "$HABITAT_ROLE" --change "$HABITAT_CHANGE" \
+  --run-id "$HABITAT_RUN_ID" --verdict "$VERDICT" --subtype "$SUBTYPE" \
+  --cost "$COST" --turns "$TURNS" --exit "$CLAUDE_EXIT" \
+  --finished-at "$NOW" --repo "$REPO_URL"
 
 # 7. Commit + push — nooit main; we staan op $BRANCH
 git add -A

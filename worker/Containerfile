@@ -1,22 +1,24 @@
 # SPDX-License-Identifier: EUPL-1.2
-# Habitat worker-image: één container met Claude Code headless + uv + git.
+# Habitat worker-image: één container met Claude Code headless + uv + git + python3.
 # Alleen worker-eigen tools worden gebakken; doel-repo-deps komen runtime.
-# Gepinde versies, nooit `latest`.
+# Gepinde versies, nooit `latest`. Build-context = repo-root.
 FROM node:22.11.0-bookworm-slim
 
 # uv (gepind), meegekopieerd uit de officiële distroless image
 COPY --from=ghcr.io/astral-sh/uv:0.11.15 /uv /uvx /bin/
 
-# git + ca-certificates + jq (jq voor verdict/cost-parsing in het entrypoint)
+# git + ca-certificates + jq (verdict-parsing) + python3 (audit/rapport-tool)
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git ca-certificates jq \
+ && apt-get install -y --no-install-recommends git ca-certificates jq python3 \
  && rm -rf /var/lib/apt/lists/*
 
 # Claude Code headless (gepinde versie)
 RUN npm install -g @anthropic-ai/claude-code@2.1.201 \
  && npm cache clean --force
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+# Habitat-eigen tooling (audit + HTML-rapport)
+COPY report/ /opt/habitat/report/
+COPY worker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh \
  && useradd -m -u 10001 worker \
  && mkdir -p /work && chown worker:worker /work

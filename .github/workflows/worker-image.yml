@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - worker/**
+      - report/**
       - .github/workflows/worker-image.yml
   workflow_dispatch:
 
@@ -30,7 +31,7 @@ jobs:
       - name: Build + push (SHA-tag, immutable)
         uses: docker/build-push-action@v6
         with:
-          context: worker
+          context: .
           file: worker/Containerfile
           push: true
           tags: ghcr.io/mwest2020/habitat-worker:${{ github.sha }}
