@@ -28,7 +28,9 @@ def git(repo: str, *args: str) -> str:
 
 
 def build_entry(a) -> dict:
-    diff = git(a.repo_dir, "diff", "--cached")
+    # diff t.o.v. de basis vóór de agent (vangt óók door de agent gecommitte
+    # wijzigingen); val terug op --cached als er geen base-ref is meegegeven.
+    diff = git(a.repo_dir, "diff", a.base_ref) if a.base_ref else git(a.repo_dir, "diff", "--cached")
     e = {
         "ts": a.finished_at, "role": a.role, "change": a.change,
         "run_id": a.run_id, "verdict": a.verdict, "subtype": a.subtype,
@@ -52,13 +54,15 @@ def main() -> None:
               "finished-at", "cost", "turns", "exit"):
         p.add_argument("--" + f, default="")
     p.add_argument("--repo-dir", default=".")
+    p.add_argument("--base-ref", default="")
     a = p.parse_args()
     a.run_id = a.run_id or ""
     a.finished_at = a.finished_at or ""
 
     hab = Path(a.repo_dir) / ".habitat"
     hab.mkdir(exist_ok=True)
-    stat = git(a.repo_dir, "diff", "--cached", "--stat").strip()
+    stat = (git(a.repo_dir, "diff", a.base_ref, "--stat") if a.base_ref
+            else git(a.repo_dir, "diff", "--cached", "--stat")).strip()
 
     entry = build_entry(a)
     with (hab / "audit.jsonl").open("a") as fh:

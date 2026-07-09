@@ -55,6 +55,7 @@ fi
 
 BRANCH="habitat/${HABITAT_ROLE}/${HABITAT_CHANGE}"
 git checkout -b "$BRANCH"
+BASE_REF=$(git rev-parse HEAD)   # basis vóór de agent; diff_hash meet hiertegen
 
 # 4. Rol-prompt — rollen leven in .claude/agents/ van de DÓELREPO, niet in Habitat
 PROMPT="Je bent de '${HABITAT_ROLE}'-agent voor deze repository. Volg
@@ -94,7 +95,7 @@ python3 /opt/habitat/report/habitat_report.py \
   --repo-dir . --role "$HABITAT_ROLE" --change "$HABITAT_CHANGE" \
   --run-id "$HABITAT_RUN_ID" --verdict "$VERDICT" --subtype "$SUBTYPE" \
   --cost "$COST" --turns "$TURNS" --exit "$CLAUDE_EXIT" \
-  --finished-at "$NOW" --repo "$REPO_URL"
+  --finished-at "$NOW" --repo "$REPO_URL" --base-ref "$BASE_REF"
 
 # 7. Commit + push — nooit main; we staan op $BRANCH
 git add -A
