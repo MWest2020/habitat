@@ -97,6 +97,19 @@ python3 /opt/habitat/report/habitat_report.py \
   --cost "$COST" --turns "$TURNS" --exit "$CLAUDE_EXIT" \
   --finished-at "$NOW" --repo "$REPO_URL" --base-ref "$BASE_REF"
 
+# 6b. Bewaar de agent-eind-uitvoer (o.a. de review-tekst) als markdown op de branch.
+# Ná habitat_report.py zodat dit de code-diff-hash niet vervuilt — net als
+# run-report.json is dit een habitat-artefact, geen agent-codewijziging.
+if jq -e 'has("result")' "$OUT" >/dev/null 2>&1; then
+  OUTPUT_MD=".habitat/run-output-${HABITAT_RUN_ID}.md"
+  {
+    printf '# Habitat %s — %s\n\n' "$HABITAT_ROLE" "$HABITAT_CHANGE"
+    printf '_run_id %s · verdict %s · %s_\n\n---\n\n' "$HABITAT_RUN_ID" "$VERDICT" "$NOW"
+    jq -r '.result // ""' "$OUT"
+  } > "$OUTPUT_MD"
+  log "agent-uitvoer bewaard: ${OUTPUT_MD}"
+fi
+
 # 7. Commit + push — nooit main; we staan op $BRANCH
 git add -A
 git commit -q -m "habitat: ${HABITAT_ROLE} run ${HABITAT_RUN_ID} (change ${HABITAT_CHANGE})" \
