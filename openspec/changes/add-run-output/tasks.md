@@ -12,4 +12,6 @@
 - [x] `WORKER_IMAGE`-pin gedocumenteerd op de nieuwe SHA (gebruiken bij volgende dispatch)
 - [x] Repo-secret `GHCR_PAT` toegevoegd → CI-build groen; CI pushte
       `ghcr.io/mwest2020/habitat-worker:65629ec2a855e9572f0a905cfffeeb47579fab5e`
-- [ ] Live bevestigen op een echte reviewer-run dat `run-output-<id>.md` verschijnt
+- [x] Live bevestigd: reviewer-run op `add-caching` (image `…:65629ec…`) pushte
+      `.habitat/run-output-reviewer-add-caching-20260711-214642.md` met de volledige
+      review-verdict naar branch `habitat/reviewer/add-caching` (verdict=ok, 15 turns)
