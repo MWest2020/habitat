@@ -10,5 +10,6 @@
 - [x] CI-fix: `worker-image.yml` pusht via `GHCR_PAT` i.p.v. GITHUB_TOKEN (commit 65629ec)
       — lost de `write_package`-denial op het niet-gekoppelde user-package op
 - [x] `WORKER_IMAGE`-pin gedocumenteerd op de nieuwe SHA (gebruiken bij volgende dispatch)
-- [ ] Mark: repo-secret `GHCR_PAT` (scope `write:packages`) toevoegen → CI-build groen
+- [x] Repo-secret `GHCR_PAT` toegevoegd → CI-build groen; CI pushte
+      `ghcr.io/mwest2020/habitat-worker:65629ec2a855e9572f0a905cfffeeb47579fab5e`
 - [ ] Live bevestigen op een echte reviewer-run dat `run-output-<id>.md` verschijnt
