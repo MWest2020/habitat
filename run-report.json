@@ -1,13 +1,13 @@
 {
-  "role": "builder",
+  "role": "reviewer",
   "change": "apply-docs-contract",
-  "run_id": "builder-apply-docs-contract-20260712-185947",
+  "run_id": "reviewer-apply-docs-contract-20260712-190446",
   "repo": "https://github.com/MWest2020/habitat.git",
   "verdict": "ok",
   "subtype": "success",
-  "total_cost_usd": "0.8809435",
-  "num_turns": "19",
+  "total_cost_usd": "0.46622450000000004",
+  "num_turns": "10",
   "claude_exit": "0",
-  "finished_at": "2026-07-12T19:02:53Z",
-  "diff_hash": "b86dca796c826098ba7bc3e7da88b0e618c46b54a3cc189d4778de8b5b58868e"
+  "finished_at": "2026-07-12T19:06:07Z",
+  "diff_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 }
