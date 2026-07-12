@@ -74,6 +74,17 @@ claude -p "$PROMPT" \
 CLAUDE_EXIT=$?
 set -e
 
+# 4b. De agent kan tijdens de run zelf een branch hebben aangemaakt (bv. een
+# change-taak "branch X vanaf de default branch"). Zonder correctie pusht stap 7
+# dan een lege rol-branch en gaat het werk + run-report stilletjes verloren
+# (les uit Wanderer-runs, 2026-07-12). Snap de rol-branch naar de huidige HEAD;
+# working-tree-wijzigingen blijven staan.
+CUR_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$CUR_BRANCH" != "$BRANCH" ]; then
+  log "agent eindigde op '$CUR_BRANCH' — rol-branch ${BRANCH} verplaatst naar diens HEAD"
+  git checkout -q -B "$BRANCH"
+fi
+
 # 5. Verdict uit de JSON (defensief), niet uit de exit-code
 VERDICT="error"; COST=""; TURNS=""; SUBTYPE=""
 if jq -e . "$OUT" >/dev/null 2>&1; then
@@ -114,7 +125,13 @@ fi
 git add -A
 git commit -q -m "habitat: ${HABITAT_ROLE} run ${HABITAT_RUN_ID} (change ${HABITAT_CHANGE})" \
   || log "commit: niets gewijzigd"
-git push -u origin "$BRANCH"
+# Bestaat de remote branch al met andere historie (eerdere run), dan weigert de
+# kale push en zou het run-report verloren gaan. Fallback: push naar een
+# run-unieke branch zodat elke run altijd ergens landt. Nooit force-pushen.
+git push -u origin "$BRANCH" || {
+  log "push geweigerd — run bewaard op ${BRANCH}-${HABITAT_RUN_ID}"
+  git push -u origin "HEAD:refs/heads/${BRANCH}-${HABITAT_RUN_ID}"
+}
 log "branch gepusht: ${BRANCH}"
 
 # Exit weerspiegelt de run-uitkomst (Job-status)
