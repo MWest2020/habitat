@@ -24,7 +24,12 @@ HABITAT_MAX_BUDGET_USD=${HABITAT_MAX_BUDGET_USD:-5.00}
 ACTIVE_DEADLINE_SECONDS=${ACTIVE_DEADLINE_SECONDS:-1800}
 PAT_SECRET=${PAT_SECRET:-pat-node-01}
 slug=$(echo "$CHANGE" | tr '/_ ' '---' | tr '[:upper:]' '[:lower:]')
-JOB_NAME="habitat-${ROLE}-${slug}-$(date +%s)"
+# Repo-naam in de Job-naam: zonder botsen parallelle dispatches van dezelfde
+# rol+change voor verschillende repos in dezelfde seconde (les 2026-07-13).
+# Label-waarden (job-name) mogen max 63 tekens: onderdelen afkappen.
+repo_short=$(basename "$REPO" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-' | cut -c1-12)
+JOB_NAME="habitat-${ROLE}-${repo_short}-${slug:0:20}-$(date +%s)"
+JOB_NAME=${JOB_NAME:0:63}
 
 VARS='$JOB_NAME $HABITAT_ROLE $HABITAT_CHANGE $HABITAT_REPO $HABITAT_RUN_ID $HABITAT_BASE_BRANCH'
 VARS+=' $HABITAT_MAX_BUDGET_USD $ACTIVE_DEADLINE_SECONDS $PAT_SECRET $WORKER_IMAGE'
