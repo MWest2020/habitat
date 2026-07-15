@@ -2,7 +2,7 @@
 
 Een minimaal platform waarop Claude Code-agents autonoom aan repositories werken
 binnen expliciete, niet-onderhandelbare grenzen — op een thuiscluster (3× K8s-node,
-Tailscale). Habitat weet níets van domeinlogica; het levert vijf dingen:
+VPN-/overlaynetwerk). Habitat weet níets van domeinlogica; het levert vijf dingen:
 
 **werkverdeling · executie · isolatie · escalatie · audit**
 

@@ -4,7 +4,7 @@
 
 Een minimaal platform waarop Claude Code-agents autonoom aan repositories werken
 binnen expliciete, niet-onderhandelbare grenzen — op een thuiscluster (3× K8s-node,
-Tailscale). Habitat levert werkverdeling, executie, isolatie, escalatie en audit.
+VPN-/overlaynetwerk). Habitat levert werkverdeling, executie, isolatie, escalatie en audit.
 Het weet níets van domeinlogica. Eerste afnemer: *wordsworth* (aparte repo).
 
 Single-user platform voor Mark Westerweel. Persoonlijke infrastructuur.
