@@ -43,10 +43,22 @@ De rol-SA heeft geen API-token en geen secret-leesrecht; de kubelet mount de
 secrets op basis van de pod-spec. Zo kan een worker de gemounte Claude-credentials
 (sub-first) en zijn node-`GIT_PAT` gebruiken zonder de kube-API te kunnen bevragen.
 
+### Token-refresh: één schrijver, sync-at-dispatch (clevere valkuil)
+De subscription-token in `claude-credentials` verloopt na ~8u. De clevere valkuil
+is de worker zelf laten refreshen (de creds staan schrijfbaar in `~/.claude/`):
+een refresh in een wegwerp-Job kan de refresh-token roteren zonder dat die
+terugkomt in het cluster-secret, en parallelle Jobs geven refresh-races. Saai
+alternatief: de orchestrator is de énige schrijver en synct het secret bij elke
+dispatch vanaf `~/.claude/.credentials.json` op de orchestrator-host — diens
+eigen Claude-sessie houdt dat bestand vers. `dispatch.sh` waarschuwt als de token
+vóór de Job-deadline verloopt, en slaat de sync over met `CLAUDE_CREDS_FILE=`
+(leeg) of als het bronbestand ontbreekt (secret blijft dan zoals uitgerold).
+
 ## Parameters (env voor dispatch.sh / envsubst)
 `HABITAT_ROLE`, `HABITAT_CHANGE`, `HABITAT_REPO`, `HABITAT_RUN_ID`,
 `HABITAT_MAX_BUDGET_USD` (default 5.00), `ACTIVE_DEADLINE_SECONDS` (default 1800),
-`PAT_SECRET` (default `pat-node-01`), `WORKER_IMAGE` (verplicht, SHA-getagd).
+`PAT_SECRET` (default `pat-node-01`), `WORKER_IMAGE` (verplicht, SHA-getagd),
+`CLAUDE_CREDS_FILE` (default `~/.claude/.credentials.json`; leeg = geen sync).
 
 ## Wat deze change NIET doet
 - Geen orchestrator-mandaat/tmux — dat is `add-orchestrator`.

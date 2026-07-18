@@ -24,4 +24,8 @@
 ## 4. Randvoorwaarden (ontdekt tijdens live run)
 
 - [x] 4.1 Node-VM's vereisen AVX2 (Bun-runtime) → Proxmox CPU-type `host` (Mark, gedaan)
-- [ ] 4.2 Subscription-token verloopt (~8u) → refresh-strategie voor geplande runs (open)
+- [x] 4.2 Subscription-token verloopt (~8u) → refresh-strategie: sync-at-dispatch door de
+      orchestrator (énige schrijver) vanaf `~/.claude/.credentials.json`; waarschuwing als de
+      token vóór de Job-deadline verloopt; `CLAUDE_CREDS_FILE=` slaat de sync over. Workers
+      refreshen nooit zelf (rotatie-race). Zie design.md; blok functioneel getest met
+      gestubde kubectl (verlopen/vers/geen creds) op 2026-07-18.
