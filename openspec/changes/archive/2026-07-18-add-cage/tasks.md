@@ -21,7 +21,13 @@
 - [x] 4.1 `.sops.yaml` met creation-rules (encrypt alleen `data`/`stringData`)
 - [x] 4.2 Secret-templates: `anthropic-api-key`, `pat-node-<n>` (`.example.yaml`)
 - [x] 4.3 Bootstrap-README: age-key genereren, `.enc.yaml` maken, decrypt-at-apply
-- [ ] 4.4 (Mark) echte age-key + PAT's aanmaken, `.enc.yaml` versleutelen en uitrollen
+- [x] 4.4 Age-key + SOPS-secrets aangemaakt en uitgerold (2026-07-18): keypair gegenereerd op de
+      orchestrator-host (nu ubuntu@cp-01, `~/.config/sops/age/habitat.txt`, mode 600; privé-key
+      heeft die host nooit verlaten), publieke key in `.sops.yaml`, bestaande `pat-node-01`
+      versleuteld naar `pat-node-01.enc.yaml` (op cp-01 zelf; plaintext nooit buiten die host),
+      decrypt-at-apply live bewezen (`sops -d | kubectl apply` → configured, label erbij).
+      Rest-punten: nieuwe PAT's (node-02/03) zijn GitHub-UI-only — pas nodig zodra die nodes
+      workers draaien; `claude-credentials` bewust niet in SOPS (sync-at-dispatch, zie add-dispatch 4.2).
 
 ## 5. Verificatie (DoD)
 

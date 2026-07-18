@@ -11,14 +11,13 @@ nooit. De `.example.yaml`-bestanden hier zijn templates zonder echte waarden.
 age-keygen -o ~/.config/sops/age/habitat.txt
 #    kopieer de "public key: age1..." regel in cage/secrets/.sops.yaml (age:)
 
-# 2. Claude-auth (sub-first): maak claude-credentials uit je subscription-credentials
-kubectl -n agents create secret generic claude-credentials \
-  --from-file=credentials.json="$HOME/.claude/.credentials.json" \
-  --dry-run=client -o yaml > claude-credentials.enc.yaml
-sops -e -i claude-credentials.enc.yaml     # versleutelt alleen data/stringData
-
-# 3. Per node een PAT-secret (pat-node-01.enc.yaml, pat-node-02.enc.yaml, ...)
+# 2. Per node een PAT-secret (pat-node-01.enc.yaml, pat-node-02.enc.yaml, ...)
 ```
+
+**Uitzondering — `claude-credentials`**: dat secret gaat níet via SOPS in git.
+De subscription-token verloopt na ~8u; `dispatch/dispatch.sh` synct het secret
+bij elke dispatch vanaf `~/.claude/.credentials.json` op de orchestrator-host
+(zie add-dispatch, taak 4.2). SOPS-in-git is voor at-rest-secrets zoals PAT's.
 
 ## Uitrollen (decrypt-at-apply, geen in-cluster decryptie)
 
