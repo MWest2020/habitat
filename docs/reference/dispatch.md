@@ -33,6 +33,7 @@ dispatch.sh <rol> <change> <repo> [run-id]
 | `ACTIVE_DEADLINE_SECONDS` | `1800` | `activeDeadlineSeconds` op de Job |
 | `PAT_SECRET` | `pat-node-01` | secret met `GIT_PAT` (git-auth over HTTPS) |
 | `HABITAT_LOGDIR` | `./run-logs` | doelmap voor gearchiveerde logs |
+| `CLAUDE_CREDS_FILE` | `~/.claude/.credentials.json` | bron voor de `claude-credentials`-sync per dispatch (subscription-token verloopt ~8u); leeg = sync overslaan |
 
 Het script exporteert daarnaast `JOB_NAME`, `HABITAT_ROLE`, `HABITAT_CHANGE`,
 `HABITAT_REPO` en `HABITAT_RUN_ID` naar het manifest (via `envsubst`).
