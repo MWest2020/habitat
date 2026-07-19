@@ -34,10 +34,10 @@ het cluster; de agents draaien als K8s Jobs op de nodes, binnen de kooi.
 
 - **Orchestrator** — één Claude Code-sessie op de laptop (tmux). Mag: Jobs CRUD'en
   in `agents`, logs streamen, branches inspecteren, Mark aanroepen. Schrijft zelf
-  nooit productiecode. (change `add-orchestrator`, nog te doen)
+  nooit productiecode. (change `add-orchestrator`, af)
 - **Workers** — K8s Jobs, één image (`claude -p` + `uv` + `git`). Rollen
   (builder/reviewer/security) zijn `.claude/agents/`-files in de **doelrepo**, niet
-  in Habitat. (change `add-worker-image`, propose)
+  in Habitat. (change `add-worker-image`, af)
 - **Kooi** — namespace `agents`: default-deny egress + Cilium `toFQDNs`-allowlist,
   minimale RBAC, SOPS+age-secrets. (change `add-cage`, **live toegepast + getest**)
 
@@ -90,23 +90,15 @@ hash-chained audit-JSONL.
 3. **Data** — afnemer-verantwoordelijkheid (wordsworth regelt eigen idempotentie);
    Habitat garandeert alleen dat runs geen state buiten Job en branch achterlaten.
 
-## Status & vervolgstappen
+## Status
 
-| Change | Wat | Status |
-|---|---|---|
-| `add-cage` | namespace, egress-policy (Cilium toFQDNs), RBAC, SOPS-structuur | **live toegepast + getest** |
-| `add-worker-image` | Containerfile + entrypoint + GHCR-build | propose (klaar voor implementatie) |
-| `add-dispatch` | Job-template (`activeDeadlineSeconds`, `backoffLimit:0`) + dispatch-script | nog te schrijven |
-| `add-orchestrator` | orchestrator-`CLAUDE.md` (mandaat + escalatiematrix) + tmux-indeling | nog te schrijven |
-| `add-audit-report` | hash-chained JSONL + single-file HTML-run-rapport | nog te schrijven |
+v0 is compleet en live bewezen: kooi, worker-image, dispatch, audit-rapportage en
+orchestrator-mandaat zijn gebouwd, getest en gearchiveerd. De actuele statusbron is
+`openspec list` (open changes) en [`openspec/changes/archive/`](../../openspec/changes/archive/)
+(afgerond) — deze pagina houdt bewust geen eigen statustabel bij (die veroudert).
 
-**Openstaand beslispunt**: nu er geen egress-proxy meer is, is git-auth via een
-SSH-deploy-key (de oorspronkelijke keuze) weer mogelijk naast de PAT-over-HTTPS die
-nu gekozen is. Zie de repo-README en `openspec/changes/add-worker-image/`.
+Het eerdere beslispunt git-auth (SSH-deploy-key vs PAT-over-HTTPS) is beslecht:
+PAT-over-HTTPS via per-node secrets, live bewezen (zie add-worker-image, add-dispatch).
 
-**Definition of done (v0)**: orchestrator dispatcht een builder-Job voor een triviale
-change in een testrepo → log streamt in tmux → reviewer + security volgen →
-orchestrator escaleert de merge naar Mark, mét HTML-run-rapport. Eén volledige loop.
-
-De volledige, formele specificatie staat per change onder
-[`openspec/changes/`](../../openspec/changes/).
+De volledige, formele specificatie staat per capability onder
+[`openspec/specs/`](../../openspec/specs/).

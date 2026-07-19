@@ -35,8 +35,8 @@ in de DOELREPO       ┘                          └── escalatie → Mark (
   escalatie. Schrijft zelf nooit productiecode.
 - **Workers**: K8s Jobs, één image (`claude -p` + `uv` + `git`). Rollen zijn
   `.claude/agents/`-files in de doelrepo, niet in Habitat.
-- **Isolatie**: default-deny egress → alleen CoreDNS + één Squid-proxy (domein-
-  allowlist). RBAC per rol. Secrets via SOPS+age (één cluster-age-key).
+- **Isolatie**: default-deny egress → Cilium `toFQDNs` (domein-allowlist).
+  RBAC per rol. Secrets via SOPS+age (één cluster-age-key).
 - **Git-auth**: single-repo fine-grained PAT over HTTPS, per node intrekbaar.
 
 ## Conventies
