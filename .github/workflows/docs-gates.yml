@@ -9,3 +9,4 @@ jobs:
     with:
       code_paths: "dispatch/,worker/,cage/,report/,orchestrator/"
       drift_mode: "fail"
+      handbook_ref: "add-docs-gates"   # TEST: scripts van dezelfde branch; na merge weg (default main)
