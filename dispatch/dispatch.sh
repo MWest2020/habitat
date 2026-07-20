@@ -94,3 +94,5 @@ elif echo "$conds" | grep -qi 'Complete'; then
   exit 0
 fi
 echo "[dispatch] onbekende status"; exit 2
+
+# docs-gates live-test 2026-07-20 (geen gedragswijziging)

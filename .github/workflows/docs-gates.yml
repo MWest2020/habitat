@@ -1,0 +1,11 @@
+# Docs-gates: contract- + drift-check per PR. Implementatie leeft in de hub
+# (MWest2020/handbook); zie docs/reference/dispatch.md en het handbook.
+name: docs-gates
+on:
+  pull_request:
+jobs:
+  gates:
+    uses: MWest2020/handbook/.github/workflows/docs-gates.yml@add-docs-gates
+    with:
+      code_paths: "dispatch/,worker/,cage/,report/,orchestrator/"
+      drift_mode: "fail"
