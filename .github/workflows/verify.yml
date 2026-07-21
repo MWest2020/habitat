@@ -1,0 +1,29 @@
+# Verify-gate: shellcheck + yaml-syntax (test-gate, hub docs/reference/test-gate.md).
+name: verify
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y shellcheck >/dev/null
+          find . -name '*.sh' -not -path './openspec/changes/archive/*' -print0 \
+            | xargs -0 -r shellcheck --severity=warning
+      - name: yaml-syntax
+        run: |
+          python3 - <<'PY'
+          import glob, yaml, sys
+          bad = 0
+          for f in glob.glob('**/*.yml', recursive=True) + glob.glob('**/*.yaml', recursive=True):
+              if '/archive/' in f or 'job-template' in f:
+                  continue
+              try:
+                  list(yaml.safe_load_all(open(f)))
+              except Exception as e:
+                  print(f'YAML-FOUT {f}: {e}'); bad = 1
+          sys.exit(bad)
+          PY
