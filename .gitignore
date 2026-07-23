@@ -18,6 +18,9 @@ keys.txt
 kubeconfig
 *.kubeconfig
 
+# Dispatch-run-logs (runtime-artefacten; dispatch.sh HABITAT_LOGDIR-default)
+run-logs/
+
 # OS / editor
 .DS_Store
 *.swp
