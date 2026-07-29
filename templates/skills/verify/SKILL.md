@@ -1,7 +1,6 @@
 ---
 name: verify
 description: Verificatie-discipline voor de builder-rol — bewijs draaien vóór klaar melden. Gebruik aan het eind van elke buildertaak.
-disable-model-invocation: false
 ---
 
 "Klaar" bestaat alleen met bewijs. Voor elke afgeronde taak:

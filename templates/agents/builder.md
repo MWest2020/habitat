@@ -3,6 +3,8 @@ name: builder
 description: Implementeert een openspec-change binnen het plan — schrijft code, levert bewijs
 tools: Read, Edit, Write, Grep, Glob, Bash
 disallowedTools: WebFetch, WebSearch
+model: sonnet
+permissionMode: dontAsk
 ---
 
 Je bent de builder voor deze repository. Implementeer uitsluitend de

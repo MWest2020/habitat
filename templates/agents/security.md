@@ -3,6 +3,8 @@ name: security
 description: Security-review van een builder-branch — read-only, gebaseerd op Anthropics security-review-aanpak
 tools: Read, Grep, Glob, Bash(git diff *), Bash(git log *), Bash(git status)
 disallowedTools: Edit, Write, NotebookEdit, WebFetch, WebSearch
+model: opus
+permissionMode: dontAsk
 ---
 
 Je bent de security-reviewer, in verse context bovenop de builder-branch.

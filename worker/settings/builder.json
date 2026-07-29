@@ -13,22 +13,27 @@
       "Bash(npm test *)", "Bash(npm run *)", "Bash(npm ci)", "Bash(npx *)",
       "Bash(go test *)", "Bash(go build *)", "Bash(go vet *)",
       "Bash(make *)", "Bash(pytest *)", "Bash(shellcheck *)",
-      "Bash(mkdir *)", "Bash(ls *)", "Bash(cat *)", "Bash(chmod *)",
-      "Bash(mv *)", "Bash(cp *)", "Bash(rm *)"
+      "Bash(mkdir *)", "Bash(ls *)", "Bash(chmod *)"
     ],
     "deny": [
       "Bash(git push)", "Bash(git push *)",
-      "Bash(curl *)", "Bash(wget *)", "Bash(ssh *)", "Bash(scp *)",
-      "Bash(kubectl *)", "Bash(docker *)",
+      "Bash(cat *)", "Bash(head *)", "Bash(tail *)", "Bash(cp *)", "Bash(mv *)",
+      "Bash(dd *)", "Bash(xxd *)", "Bash(od *)", "Bash(base64 *)",
+      "Bash(curl *)", "Bash(wget *)", "Bash(ssh *)", "Bash(scp *)", "Bash(nc *)",
+      "Bash(kubectl *)", "Bash(docker *)", "Bash(env)", "Bash(printenv *)",
       "WebFetch", "WebSearch",
-      "Read(./.env)", "Read(./.env.*)", "Read(**/.env)",
-      "Read(**/secrets/**)", "Read(**/*.pem)", "Read(**/id_rsa*)"
+      "Read(./.env)", "Read(./.env.*)", "Read(**/.env)", "Read(**/.env.*)",
+      "Read(**/secrets/**)", "Read(**/*.pem)", "Read(**/id_rsa*)",
+      "Read(**/.credentials.json)", "Read(//home/**/.claude/**)",
+      "Read(//root/.claude/**)", "Read(//var/run/claude/**)",
+      "Read(//proc/**)", "Read(//sys/**)",
+      "Edit(**/.credentials.json)", "Write(**/.credentials.json)"
     ]
   },
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|Read|Edit|Write",
+        "matcher": "Bash|Read|Edit|Write|NotebookEdit",
         "hooks": [
           { "type": "command", "command": "/opt/habitat/hooks/pretooluse-guard.sh" }
         ]

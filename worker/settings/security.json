@@ -13,8 +13,23 @@
       "Edit", "Write", "NotebookEdit",
       "WebFetch", "WebSearch",
       "Bash(git push)", "Bash(git push *)",
-      "Read(./.env)", "Read(./.env.*)", "Read(**/.env)",
-      "Read(**/secrets/**)", "Read(**/*.pem)", "Read(**/id_rsa*)"
+      "Bash(cat *)", "Bash(head *)", "Bash(tail *)", "Bash(env)", "Bash(printenv *)",
+      "Bash(curl *)", "Bash(wget *)", "Bash(nc *)", "Bash(base64 *)",
+      "Read(./.env)", "Read(./.env.*)", "Read(**/.env)", "Read(**/.env.*)",
+      "Read(**/secrets/**)", "Read(**/*.pem)", "Read(**/id_rsa*)",
+      "Read(**/.credentials.json)", "Read(//home/**/.claude/**)",
+      "Read(//root/.claude/**)", "Read(//var/run/claude/**)",
+      "Read(//proc/**)", "Read(//sys/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|Edit|Write|NotebookEdit",
+        "hooks": [
+          { "type": "command", "command": "/opt/habitat/hooks/pretooluse-guard.sh" }
+        ]
+      }
     ]
   }
 }

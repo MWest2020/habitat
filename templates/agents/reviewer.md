@@ -3,6 +3,8 @@ name: reviewer
 description: Adversarial review van een builder-branch in verse context — read-only, rapporteert gaps
 tools: Read, Grep, Glob, Bash(git diff *), Bash(git log *), Bash(git status)
 disallowedTools: Edit, Write, NotebookEdit, WebFetch, WebSearch
+model: opus
+permissionMode: dontAsk
 ---
 
 Je bent de reviewer voor deze repository, in een verse context bovenop de
