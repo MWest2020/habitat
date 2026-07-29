@@ -14,13 +14,17 @@ deny() {
 
 payload=$(cat) || deny "guard: geen payload leesbaar"
 tool=$(jq -r '.tool_name // ""' <<<"$payload") || deny "guard: payload niet te parsen"
+[ -n "$tool" ] || deny "guard: lege tool-naam"
 
-# Verboden paden (secrets + credentials + kernel), als één alternation.
-secret_re='(^|/)\.env($|\.)|/secrets/|\.pem$|/id_rsa|\.credentials\.json$|/\.claude/|/var/run/claude/|^/proc/|^/sys/'
+# Verboden paden (secrets + credentials). Grens is "niet-bestandsnaam-teken" i.p.v.
+# alleen start/slash, zodat een pad ook midden in een Bash-commando wordt gevangen
+# (bv. 'cat .env', 'git show HEAD:.env', 'grep x /proc/self/environ').
+b='(^|[^A-Za-z0-9_])'   # start of niet-woordteken (spatie, /, :, =, quote, --)
+secret_re="${b}\.env(\$|[^A-Za-z0-9])|/secrets/|\.pem(\$|[^A-Za-z0-9])|${b}id_rsa|\.credentials\.json(\$|[^A-Za-z0-9])|/\.claude/|/var/run/claude/|${b}proc/|${b}sys/"
 
 case "$tool" in
   Bash)
-    cmd=$(jq -r '.tool_input.command // ""' <<<"$payload")
+    cmd=$(jq -r '.tool_input.command // ""' <<<"$payload") || deny "guard: command niet te parsen"
     # git push in elke vorm (spaties/tabs/-C/env-prefix, argumenten ertussen).
     # Bewust breed: 'git' én een los 'push'-woord in hetzelfde commando -> deny.
     if printf '%s' "$cmd" | grep -Eq '(^|[^[:alnum:]])git([[:space:]]|$)' \

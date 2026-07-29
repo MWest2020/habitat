@@ -12,7 +12,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends git ca-certificates jq python3 \
  && rm -rf /var/lib/apt/lists/*
 
-# Claude Code headless (gepinde versie; ≥2.1.220 voor --bare/--json-schema/dontAsk)
+# Claude Code headless (gepinde versie; ≥2.1.220 voor --json-schema/dontAsk/--setting-sources)
 RUN npm install -g @anthropic-ai/claude-code@2.1.220 \
  && npm cache clean --force
 

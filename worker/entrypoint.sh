@@ -149,6 +149,19 @@ else
   log "geen parseerbare JSON van claude (exit ${CLAUDE_EXIT})"
 fi
 [ "$ARCHITECT_DIRTY" = "1" ] && VERDICT="failed"
+
+# 5b. Secret-detectie VÓÓR het rapport (reviewer minor): scan de agent-output
+# (bron van run-output.md) en de werkboom; een hit maakt de run failed, zodat
+# run-report.json en de Job-uitkomst niet tegenstrijdig zijn. De feitelijke
+# redactie van bestanden gebeurt in stap 6c (vlak vóór de commit).
+SECRET_RE='sk-ant-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}'
+# Alleen de agent-output en de door de agent gemaakte diff — niet de al
+# bestaande repo-inhoud (dat zou op legitieme fixtures false-flaggen).
+if grep -Eq "$SECRET_RE" "$OUT" 2>/dev/null \
+   || git diff "$BASE_REF" 2>/dev/null | grep -Eq "$SECRET_RE"; then
+  log "SECRET-SCAN: patroon in agent-output of -diff — run afgekeurd"
+  VERDICT="failed"
+fi
 log "verdict=${VERDICT} rol-verdict=${ROLE_VERDICT:-geen} subtype=${SUBTYPE} cost=${COST} turns=${TURNS}"
 
 # 6. Stage de agent-wijziging, genereer hash-chained audit + HTML-run-rapport
@@ -173,21 +186,16 @@ if jq -e 'has("result")' "$OUT" >/dev/null 2>&1; then
   log "agent-uitvoer bewaard: ${OUTPUT_MD}"
 fi
 
-# 6c. Secret-scrub op alle te committen wijzigingen (defense-in-depth, B1):
-# mocht er ondanks de deny-lijst toch een secret in run-output/diff staan, dan
-# wordt de waarde geredigeerd i.p.v. gepusht. Herkent de gangbare vormen.
-SECRET_RE='sk-ant-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}'
+# 6c. Secret-scrub: redigeer de waarde in alle te committen bestanden (SECRET_RE
+# is in 5b gedefinieerd; de verdict-flip is daar al gebeurd). Defense-in-depth (B1).
 git add -A
-SCAN_HIT=0
 while IFS= read -r f; do
   [ -f "$f" ] || continue
   if grep -Eq "$SECRET_RE" "$f" 2>/dev/null; then
     log "SECRET-SCRUB: patroon geredigeerd in ${f}"
     sed -i -E "s/${SECRET_RE}/[REDACTED-SECRET]/g" "$f"
-    SCAN_HIT=1
   fi
 done < <(git diff --cached --name-only --diff-filter=ACM)
-[ "$SCAN_HIT" = "1" ] && VERDICT="failed"   # een lek is altijd een mens-erbij-moment
 
 # 7. Commit + push — nooit main; we staan op $BRANCH
 git add -A
