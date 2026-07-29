@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "required": ["verdict", "summary", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "verdict": { "enum": ["PASS", "FAIL"] },
+    "summary": { "type": "string" },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "location", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "severity": { "enum": ["blocking", "major", "minor"] },
+          "location": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    }
+  }
+}

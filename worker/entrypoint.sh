@@ -14,6 +14,20 @@ done
 MAX_BUDGET="${HABITAT_MAX_BUDGET_USD:-5.00}"
 export GIT_PAT
 
+# 1a. Rol-validatie + per-rol enforcement-config (change add-role-architecture):
+# elke rol draait deny-by-default (dontAsk + allowlist) i.p.v. bypassPermissions.
+# Bewuste afwijking van de research-aanbeveling: GEEN --bare — dat slaat de
+# subscription-login over ("Not logged in", lokaal bewezen 2026-07-29) en habitat
+# is sub-first. Determinisme komt van dontAsk + expliciete settings + gepind image.
+case "$HABITAT_ROLE" in
+  architect|builder|reviewer|security) ;;
+  *) fail "onbekende rol '${HABITAT_ROLE}' (architect|builder|reviewer|security)" ;;
+esac
+ROLE_SETTINGS="/opt/habitat/settings/${HABITAT_ROLE}.json"
+ROLE_SCHEMA="/opt/habitat/schemas/${HABITAT_ROLE}.json"
+[ -f "$ROLE_SETTINGS" ] || fail "settings ontbreken: $ROLE_SETTINGS"
+[ -f "$ROLE_SCHEMA" ]   || fail "schema ontbreekt: $ROLE_SCHEMA"
+
 # 1b. Auth — sub-first: gemounte Claude-subscription-credentials; anders ANTHROPIC_API_KEY
 CRED_SRC="${CLAUDE_CREDENTIALS_FILE:-/var/run/claude/credentials.json}"
 if [ -f "$CRED_SRC" ]; then
@@ -56,6 +70,7 @@ fi
 BRANCH="habitat/${HABITAT_ROLE}/${HABITAT_CHANGE}"
 git checkout -b "$BRANCH"
 BASE_REF=$(git rev-parse HEAD)   # basis vóór de agent; diff_hash meet hiertegen
+export HABITAT_BASE_REF="$BASE_REF"   # stop-verify draait verify.sh uit deze commit
 
 # 4. Rol-prompt — rollen leven in .claude/agents/ van de DÓELREPO, niet in Habitat
 PROMPT="Je bent de '${HABITAT_ROLE}'-agent voor deze repository. Volg
@@ -66,9 +81,19 @@ en die change horen."
 OUT=/work/claude-output.json
 log "claude -p (rol=${HABITAT_ROLE}, budget=\$${MAX_BUDGET})"
 set +e
-claude -p "$PROMPT" \
+# Hardening (security-review B2/M3):
+# - --setting-sources user: laad NIET de .claude/settings.json van de gekloonde
+#   doelrepo (die kan hooks meebrengen die ongevraagd shell-exec geven). Onze
+#   rol-settings komen expliciet via --settings; de enforcement blijft dus staan.
+# - env -u GIT_PAT: de agent heeft de push-token niet nodig (clone/push doet de
+#   entrypoint); zo kan repo-gecontroleerde code (Makefile/npm-script) niet
+#   geauthenticeerd pushen buiten de permissielaag om.
+env -u GIT_PAT claude -p "$PROMPT" \
   --output-format json \
-  --permission-mode bypassPermissions \
+  --json-schema "$(cat "$ROLE_SCHEMA")" \
+  --settings "$ROLE_SETTINGS" \
+  --setting-sources user \
+  --permission-mode dontAsk \
   --max-budget-usd "$MAX_BUDGET" \
   > "$OUT" 2> /work/claude-stderr.log
 CLAUDE_EXIT=$?
@@ -85,8 +110,21 @@ if [ "$CUR_BRANCH" != "$BRANCH" ]; then
   git checkout -q -B "$BRANCH"
 fi
 
+# 4c. Architect plant, bouwt niet: wijzigingen worden teruggedraaid en de run
+# faalt (spec role-architecture). Dekt zowel working-tree-wijzigingen als een
+# door de agent gemaakte COMMIT (M9): hard-reset naar BASE_REF vóór de vergelijking.
+ARCHITECT_DIRTY=0
+if [ "$HABITAT_ROLE" = "architect" ]; then
+  if [ "$(git rev-parse HEAD)" != "$BASE_REF" ] || [ -n "$(git status --porcelain)" ]; then
+    log "architect wijzigde de repo (commit of working tree) — teruggedraaid, run afgekeurd"
+    ARCHITECT_DIRTY=1
+  fi
+  git reset -q --hard "$BASE_REF"
+  git clean -fdq
+fi
+
 # 5. Verdict uit de JSON (defensief), niet uit de exit-code
-VERDICT="error"; COST=""; TURNS=""; SUBTYPE=""
+VERDICT="error"; COST=""; TURNS=""; SUBTYPE=""; ROLE_VERDICT=""
 if jq -e . "$OUT" >/dev/null 2>&1; then
   # let op: `.is_error // true` is fout — jq behandelt false als leeg. Expliciet:
   IS_ERR=$(jq -r 'if .is_error == false then "false" else "true" end' "$OUT")
@@ -94,10 +132,37 @@ if jq -e . "$OUT" >/dev/null 2>&1; then
   COST=$(jq -r '.total_cost_usd // ""' "$OUT")
   TURNS=$(jq -r '.num_turns // ""' "$OUT")
   [ "$IS_ERR" = "false" ] && VERDICT="ok" || VERDICT="failed"
+  # Rol-verdict (PASS/FAIL) uit de structured output: machinaal gate-baar,
+  # geen vrije tekst. Envelope-veld verschilt per CLI-versie -> defensief.
+  ROLE_VERDICT=$(jq -r '
+    (.structured_output.verdict? //
+     (.result | strings | try fromjson | .verdict?) // "")' "$OUT" 2>/dev/null || echo "")
+  # Fail-closed (reviewer major): een geslaagde run zonder machinaal PASS/FAIL
+  # is geen groen licht. Alleen een expliciete PASS laat VERDICT=ok staan.
+  case "$ROLE_VERDICT" in
+    PASS) : ;;
+    FAIL) log "rol-verdict FAIL — keten stopt hier (northstar 4)"; VERDICT="failed" ;;
+    *)    log "geen machinaal rol-verdict (PASS/FAIL) in output — gate valt dicht"
+          VERDICT="failed" ;;
+  esac
 else
   log "geen parseerbare JSON van claude (exit ${CLAUDE_EXIT})"
 fi
-log "verdict=${VERDICT} subtype=${SUBTYPE} cost=${COST} turns=${TURNS}"
+[ "$ARCHITECT_DIRTY" = "1" ] && VERDICT="failed"
+
+# 5b. Secret-detectie VÓÓR het rapport (reviewer minor): scan de agent-output
+# (bron van run-output.md) en de werkboom; een hit maakt de run failed, zodat
+# run-report.json en de Job-uitkomst niet tegenstrijdig zijn. De feitelijke
+# redactie van bestanden gebeurt in stap 6c (vlak vóór de commit).
+SECRET_RE='sk-ant-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}'
+# Alleen de agent-output en de door de agent gemaakte diff — niet de al
+# bestaande repo-inhoud (dat zou op legitieme fixtures false-flaggen).
+if grep -Eq "$SECRET_RE" "$OUT" 2>/dev/null \
+   || git diff "$BASE_REF" 2>/dev/null | grep -Eq "$SECRET_RE"; then
+  log "SECRET-SCAN: patroon in agent-output of -diff — run afgekeurd"
+  VERDICT="failed"
+fi
+log "verdict=${VERDICT} rol-verdict=${ROLE_VERDICT:-geen} subtype=${SUBTYPE} cost=${COST} turns=${TURNS}"
 
 # 6. Stage de agent-wijziging, genereer hash-chained audit + HTML-run-rapport
 git add -A
@@ -120,6 +185,17 @@ if jq -e 'has("result")' "$OUT" >/dev/null 2>&1; then
   } > "$OUTPUT_MD"
   log "agent-uitvoer bewaard: ${OUTPUT_MD}"
 fi
+
+# 6c. Secret-scrub: redigeer de waarde in alle te committen bestanden (SECRET_RE
+# is in 5b gedefinieerd; de verdict-flip is daar al gebeurd). Defense-in-depth (B1).
+git add -A
+while IFS= read -r f; do
+  [ -f "$f" ] || continue
+  if grep -Eq "$SECRET_RE" "$f" 2>/dev/null; then
+    log "SECRET-SCRUB: patroon geredigeerd in ${f}"
+    sed -i -E "s/${SECRET_RE}/[REDACTED-SECRET]/g" "$f"
+  fi
+done < <(git diff --cached --name-only --diff-filter=ACM)
 
 # 7. Commit + push — nooit main; we staan op $BRANCH
 git add -A

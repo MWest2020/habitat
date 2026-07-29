@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "required": ["verdict", "summary", "plan"],
+  "additionalProperties": false,
+  "properties": {
+    "verdict": { "enum": ["PASS", "FAIL"] },
+    "summary": { "type": "string" },
+    "plan": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["objective", "files", "steps", "verification"],
+        "additionalProperties": false,
+        "properties": {
+          "objective": { "type": "string" },
+          "files": { "type": "array", "items": { "type": "string" } },
+          "steps": { "type": "array", "items": { "type": "string" } },
+          "verification": { "type": "string" },
+          "out_of_scope": { "type": "string" }
+        }
+      }
+    },
+    "risks": { "type": "array", "items": { "type": "string" } }
+  }
+}

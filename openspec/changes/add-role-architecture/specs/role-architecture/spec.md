@@ -3,11 +3,14 @@
 ### Requirement: Roles run with enforced minimal toolsets
 
 The worker SHALL run every role with a deny-by-default permission
-configuration (`--bare`, `dontAsk`, per-role settings) instead of
-`bypassPermissions`. Architect, reviewer and security roles SHALL have no
-Edit/Write capability and no unscoped Bash; the builder role SHALL have
-write access plus only scoped commands, with `git push`, `.env` and
-secret paths denied. The container remains the outer isolation boundary.
+configuration (`--permission-mode dontAsk`, per-role `--settings`, and
+`--setting-sources user` so a cloned repo cannot inject its own
+settings/hooks) instead of `bypassPermissions`. The push credential SHALL
+NOT be present in the agent subprocess environment. Architect, reviewer
+and security roles SHALL have no Edit/Write capability and no unscoped
+Bash; the builder role SHALL have write access plus only scoped commands,
+with `git push`, `.env`, secret and credential paths denied. The
+container remains the outer isolation boundary.
 
 #### Scenario: Reviewer cannot write
 

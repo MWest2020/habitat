@@ -1,6 +1,6 @@
 ---
 status: draft
-last_reviewed: 2026-07-12
+last_reviewed: 2026-07-29
 ---
 
 # Dispatch-contract
@@ -17,10 +17,14 @@ dispatch.sh <rol> <change> <repo> [run-id]
 
 | Argument | Verplicht | Betekenis |
 |---|---|---|
-| `<rol>` | ja | `builder` \| `reviewer` \| `security` |
+| `<rol>` | ja | `architect` \| `builder` \| `reviewer` \| `security` |
 | `<change>` | ja | change-naam (map onder `openspec/changes/`) |
 | `<repo>` | ja | doelrepo (`owner/repo` of URL) |
 | `[run-id]` | nee | default `<rol>-<change-geslugd>-<YYYYmmdd-HHMMSS>` |
+
+De worker dwingt per rol een settings-allowlist (`worker/settings/<rol>.json`,
+deny-by-default via `--permission-mode dontAsk`) en een output-JSON-schema
+(`worker/schemas/<rol>.json`) af; zie [`roles.md`](roles.md).
 
 ## Environment-variabelen
 

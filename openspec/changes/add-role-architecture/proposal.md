@@ -36,8 +36,9 @@ juist voor "the same result on every machine" (zie research.md, sectie A).
   (Read/Grep/Glob), levert een plan als gestructureerde output
   (`--json-schema`) met per builder-taak doel, formaat, grenzen en
   verificatiecriteria.
-- **Worker-hardening** (`worker/entrypoint.sh`): `claude --bare -p` met
-  `--permission-mode dontAsk` en een per-rol settings-JSON
+- **Worker-hardening** (`worker/entrypoint.sh`): `claude -p` met
+  `--permission-mode dontAsk`, `--setting-sources user`, `env -u GIT_PAT`
+  en een per-rol settings-JSON
   (`worker/settings/<rol>.json`) i.p.v. `bypassPermissions`:
   - architect/reviewer/security: `Read`, `Grep`, `Glob` (diff via stdin
     waar mogelijk; anders alleen `Bash(git diff *)`, `Bash(git log *)`)
