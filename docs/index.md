@@ -20,7 +20,8 @@ echte review ze op `current` zet.
   Habitat zo gebouwd is (kooi, escalatiematrix, rollback, levensloop van een run).
 - **Referentie** — [`reference/dispatch.md`](reference/dispatch.md): het
   dispatch-contract (`dispatch.sh <rol> <change> <repo>`, env-variabelen, branch- en
-  run-report-conventies).
+  run-report-conventies); [`reference/roles.md`](reference/roles.md): de vier
+  rollen (allowlists, output-schema's, verdict-gates).
 
 De formele specificatie staat per change onder
 [`openspec/changes/`](../openspec/changes/).

@@ -12,14 +12,17 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends git ca-certificates jq python3 \
  && rm -rf /var/lib/apt/lists/*
 
-# Claude Code headless (gepinde versie)
-RUN npm install -g @anthropic-ai/claude-code@2.1.201 \
+# Claude Code headless (gepinde versie; ≥2.1.220 voor --bare/--json-schema/dontAsk)
+RUN npm install -g @anthropic-ai/claude-code@2.1.220 \
  && npm cache clean --force
 
-# Habitat-eigen tooling (audit + HTML-rapport)
+# Habitat-eigen tooling (audit + HTML-rapport + per-rol enforcement)
 COPY report/ /opt/habitat/report/
+COPY worker/settings/ /opt/habitat/settings/
+COPY worker/schemas/  /opt/habitat/schemas/
+COPY worker/hooks/    /opt/habitat/hooks/
 COPY worker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh \
+RUN chmod +x /usr/local/bin/entrypoint.sh /opt/habitat/hooks/*.sh \
  && useradd -m -u 10001 worker \
  && mkdir -p /work && chown worker:worker /work
 

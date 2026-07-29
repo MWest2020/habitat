@@ -14,6 +14,20 @@ done
 MAX_BUDGET="${HABITAT_MAX_BUDGET_USD:-5.00}"
 export GIT_PAT
 
+# 1a. Rol-validatie + per-rol enforcement-config (change add-role-architecture):
+# elke rol draait deny-by-default (dontAsk + allowlist) i.p.v. bypassPermissions.
+# Bewuste afwijking van de research-aanbeveling: GEEN --bare — dat slaat de
+# subscription-login over ("Not logged in", lokaal bewezen 2026-07-29) en habitat
+# is sub-first. Determinisme komt van dontAsk + expliciete settings + gepind image.
+case "$HABITAT_ROLE" in
+  architect|builder|reviewer|security) ;;
+  *) fail "onbekende rol '${HABITAT_ROLE}' (architect|builder|reviewer|security)" ;;
+esac
+ROLE_SETTINGS="/opt/habitat/settings/${HABITAT_ROLE}.json"
+ROLE_SCHEMA="/opt/habitat/schemas/${HABITAT_ROLE}.json"
+[ -f "$ROLE_SETTINGS" ] || fail "settings ontbreken: $ROLE_SETTINGS"
+[ -f "$ROLE_SCHEMA" ]   || fail "schema ontbreekt: $ROLE_SCHEMA"
+
 # 1b. Auth — sub-first: gemounte Claude-subscription-credentials; anders ANTHROPIC_API_KEY
 CRED_SRC="${CLAUDE_CREDENTIALS_FILE:-/var/run/claude/credentials.json}"
 if [ -f "$CRED_SRC" ]; then
@@ -68,7 +82,9 @@ log "claude -p (rol=${HABITAT_ROLE}, budget=\$${MAX_BUDGET})"
 set +e
 claude -p "$PROMPT" \
   --output-format json \
-  --permission-mode bypassPermissions \
+  --json-schema "$(cat "$ROLE_SCHEMA")" \
+  --settings "$ROLE_SETTINGS" \
+  --permission-mode dontAsk \
   --max-budget-usd "$MAX_BUDGET" \
   > "$OUT" 2> /work/claude-stderr.log
 CLAUDE_EXIT=$?
@@ -85,8 +101,19 @@ if [ "$CUR_BRANCH" != "$BRANCH" ]; then
   git checkout -q -B "$BRANCH"
 fi
 
+# 4c. Architect plant, bouwt niet: wijzigingen aan de boom worden teruggedraaid
+# en de run faalt (spec role-architecture). Het plan zit in de structured output.
+if [ "$HABITAT_ROLE" = "architect" ] && [ -n "$(git status --porcelain)" ]; then
+  log "architect wijzigde bestanden — teruggedraaid, run wordt afgekeurd"
+  git checkout -- . 2>/dev/null || true
+  git clean -fdq
+  ARCHITECT_DIRTY=1
+else
+  ARCHITECT_DIRTY=0
+fi
+
 # 5. Verdict uit de JSON (defensief), niet uit de exit-code
-VERDICT="error"; COST=""; TURNS=""; SUBTYPE=""
+VERDICT="error"; COST=""; TURNS=""; SUBTYPE=""; ROLE_VERDICT=""
 if jq -e . "$OUT" >/dev/null 2>&1; then
   # let op: `.is_error // true` is fout — jq behandelt false als leeg. Expliciet:
   IS_ERR=$(jq -r 'if .is_error == false then "false" else "true" end' "$OUT")
@@ -94,10 +121,20 @@ if jq -e . "$OUT" >/dev/null 2>&1; then
   COST=$(jq -r '.total_cost_usd // ""' "$OUT")
   TURNS=$(jq -r '.num_turns // ""' "$OUT")
   [ "$IS_ERR" = "false" ] && VERDICT="ok" || VERDICT="failed"
+  # Rol-verdict (PASS/FAIL) uit de structured output: machinaal gate-baar,
+  # geen vrije tekst. Envelope-veld verschilt per CLI-versie -> defensief.
+  ROLE_VERDICT=$(jq -r '
+    (.structured_output.verdict? //
+     (.result | strings | try fromjson | .verdict?) // "")' "$OUT" 2>/dev/null || echo "")
+  if [ "$ROLE_VERDICT" = "FAIL" ]; then
+    log "rol-verdict FAIL — keten stopt hier (northstar 4)"
+    VERDICT="failed"
+  fi
 else
   log "geen parseerbare JSON van claude (exit ${CLAUDE_EXIT})"
 fi
-log "verdict=${VERDICT} subtype=${SUBTYPE} cost=${COST} turns=${TURNS}"
+[ "$ARCHITECT_DIRTY" = "1" ] && VERDICT="failed"
+log "verdict=${VERDICT} rol-verdict=${ROLE_VERDICT:-geen} subtype=${SUBTYPE} cost=${COST} turns=${TURNS}"
 
 # 6. Stage de agent-wijziging, genereer hash-chained audit + HTML-run-rapport
 git add -A

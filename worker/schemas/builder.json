@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "required": ["verdict", "summary", "evidence"],
+  "additionalProperties": false,
+  "properties": {
+    "verdict": { "enum": ["PASS", "FAIL"] },
+    "summary": { "type": "string" },
+    "changes": { "type": "array", "items": { "type": "string" } },
+    "evidence": {
+      "type": "string",
+      "description": "Bewijs dat de verificatiecriteria gehaald zijn (testuitvoer, exitcodes) — geen beweringen zonder bewijs"
+    },
+    "deviations": { "type": "array", "items": { "type": "string" } }
+  }
+}

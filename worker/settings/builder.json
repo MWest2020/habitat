@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "defaultMode": "dontAsk",
+    "disableBypassPermissionsMode": "disable",
+    "allow": [
+      "Read", "Edit", "Write", "Grep", "Glob",
+      "Bash(git add *)", "Bash(git commit *)", "Bash(git rm *)", "Bash(git mv *)",
+      "Bash(git status)", "Bash(git status *)",
+      "Bash(git diff)", "Bash(git diff *)",
+      "Bash(git log)", "Bash(git log *)",
+      "Bash(git show *)", "Bash(git checkout *)", "Bash(git branch *)",
+      "Bash(uv run *)", "Bash(uv sync *)", "Bash(uv lock *)", "Bash(uvx *)",
+      "Bash(npm test *)", "Bash(npm run *)", "Bash(npm ci)", "Bash(npx *)",
+      "Bash(go test *)", "Bash(go build *)", "Bash(go vet *)",
+      "Bash(make *)", "Bash(pytest *)", "Bash(shellcheck *)",
+      "Bash(mkdir *)", "Bash(ls *)", "Bash(cat *)", "Bash(chmod *)",
+      "Bash(mv *)", "Bash(cp *)", "Bash(rm *)"
+    ],
+    "deny": [
+      "Bash(git push)", "Bash(git push *)",
+      "Bash(curl *)", "Bash(wget *)", "Bash(ssh *)", "Bash(scp *)",
+      "Bash(kubectl *)", "Bash(docker *)",
+      "WebFetch", "WebSearch",
+      "Read(./.env)", "Read(./.env.*)", "Read(**/.env)",
+      "Read(**/secrets/**)", "Read(**/*.pem)", "Read(**/id_rsa*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "/opt/habitat/hooks/pretooluse-guard.sh" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/opt/habitat/hooks/stop-verify.sh" }
+        ]
+      }
+    ]
+  }
+}
