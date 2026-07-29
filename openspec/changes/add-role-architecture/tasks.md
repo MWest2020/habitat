@@ -37,6 +37,26 @@
 
 ## 3. Verify
 
+> Code-review: PR #11 door twee onafhankelijke agents (reviewer + security)
+> in verse context, TWEE rondes. Ronde 1 → FAIL (1 blocking + majors);
+> ronde 2 na fixes → beide PASS. Gemerged op main (14351b8). De
+> cluster-livetests hieronder vereisen `kubectl` en draaien op een
+> orchestrator-host (niet vanaf de dev-machine waar de code gebouwd is).
+
+**Dispatch-commando's voor de cluster-livetests** (vanaf een host met
+kubectl; `WORKER_IMAGE` = image gebouwd van commit ≥ 14351b8):
+
+```
+# 3.1 per rol op de testrepo
+WORKER_IMAGE=ghcr.io/mwest2020/habitat-worker:<sha> dispatch/dispatch.sh architect <change> MWest2020/habitat-testrepo
+WORKER_IMAGE=… dispatch/dispatch.sh builder  <change> MWest2020/habitat-testrepo
+HABITAT_BASE_BRANCH=habitat/builder/<change> WORKER_IMAGE=… dispatch/dispatch.sh reviewer <change> MWest2020/habitat-testrepo
+HABITAT_BASE_BRANCH=habitat/builder/<change> WORKER_IMAGE=… dispatch/dispatch.sh security <change> MWest2020/habitat-testrepo
+```
+Verwacht: architect → schone boom + plan in output; reviewer/security →
+Write/Edit geweigerd in de pod-log; builder met falende `scripts/verify.sh`
+→ Stop-hook blokkeert, Job Failed.
+
 - [ ] 3.1 Livetest per rol op habitat-testrepo: architect levert
       schema-valide plan zonder writes; reviewer/security kunnen
       aantoonbaar níét schrijven (writes geweigerd in de log); builder
