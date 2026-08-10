@@ -16,7 +16,9 @@
 
 ## 3. Verify
 
-- [ ] 3.1 `shellcheck --severity=warning` schoon.
-- [ ] 3.2 Code-review in verse context; bevindingen verwerkt.
+- [x] 3.1 `shellcheck --severity=warning` schoon.
+- [x] 3.2 Code-review in verse context: PASS (set-e-veilig, termineert, cold-pull
+      gedekt via Job-niveau activeDeadlineSeconds). Security niet materieel
+      (read-only kubectl-polling, geen push/secret/creds).
 - [ ] 3.3 Cluster-sanity: een normale dispatch meldt `AFGEROND` (exit 0) zonder
       "onbekend"; daarna afvinken/archiveren.
