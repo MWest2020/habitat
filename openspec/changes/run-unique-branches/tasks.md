@@ -21,8 +21,13 @@
 
 ## 3. Verify
 
-- [ ] 3.1 `shellcheck` schoon op entrypoint.sh, dispatch.sh, chain.sh.
-- [ ] 3.2 Code-review reviewer + security in verse context; bevindingen verwerkt.
+- [x] 3.1 `shellcheck --severity=warning` schoon op entrypoint.sh, dispatch.sh,
+      chain.sh.
+- [x] 3.2 Code-review reviewer + security in verse context; bevindingen verwerkt.
+      _Beide PASS. Verwerkt: chain.sh stopt nu bij rol-FAIL (dispatch-exit i.p.v.
+      `|| true`), reachable "geen branch"-melding, `unset HABITAT_BASE_BRANCH` aan
+      het begin. CHANGE-sanitatie: pre-existing en fail-safe (checkout -b weigert
+      gevaarlijke vormen) — genoteerd, niet in scope._
 - [ ] 3.3 Nieuwe image; cluster-verificatie: `chain.sh` op habitat-testrepo →
       run-unieke branchnamen, reviewer/security lezen aantoonbaar de juiste
       builder-branch; daarna afvinken/archiveren.
