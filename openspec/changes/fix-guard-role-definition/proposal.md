@@ -36,12 +36,22 @@ de agent, maar de keten kan zo geen enkele rol z'n eigen instructie laten lezen.
   bijwerken.
 - Deblokkeert de cluster-livetests van add-role-architecture (3.1–3.3).
 
-## Overwogen risico (voor review)
+## Symlink-mitigatie (security-review ronde 1, B1)
 
-De uitzondering matcht op **padpatroon**, niet op bestandstype. Een spoke die
-een symlink `.claude/agents/x.md` → een credential-bestand commit, zou zo een
-credential kunnen laten lezen. Beperkingen: alleen lezen, alleen op vertrouwde
-eigen spokes, en de agent zou de inhoud daarna nog moeten lekken (secret-scan
-vóór push vangt commits). Hardening-optie als de security-rol dat eist: in de
-guard een `[ ! -L "$fp" ]`-check toevoegen (afgewogen tegen fail-closed-gedrag
-bij een relatief pad met afwijkende cwd).
+De security-review toonde aan dat de padpatroon-uitzondering op zichzelf een
+symlink `.claude/agents/<rol>.md` → een credential zou laten lezen (read-only
+beschermt niets: het lezen ís de disclosure; secret-scan-vóór-push vangt een
+symlink niet). Opgelost: binnen de uitzondering wordt élke component van het pad
+op `[ -L ]` gecontroleerd — een symlink in de eindcomponent óf in een tussenmap
+(`.claude`, `.claude/agents`) leidt tot deny. Dependency-vrij (geen `realpath`;
+werkt voor relatieve paden t.o.v. de hook-cwd `/work/repo` en voor absolute
+paden). Een niet-bestaand pad heeft geen symlink-componenten en valt gewoon door.
+Gedekt door een symlink-testcase in `test-pretooluse-guard.sh`.
+
+Daarnaast newlines in `file_path` geweigerd (regel-georiënteerde grep, faalt-dicht).
+
+## Bekende, niet-in-scope (follow-up)
+
+`Glob`/`Grep` vallen niet onder deze guard (geen `case`-tak) — een tweede
+leespad dat credentials zou kunnen benaderen. Pre-existing, niet door deze
+change geraakt; kandidaat voor een aparte change.

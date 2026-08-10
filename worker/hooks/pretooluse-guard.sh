@@ -38,11 +38,23 @@ case "$tool" in
     ;;
   Read)
     fp=$(jq -r '.tool_input.file_path // ""' <<<"$payload")
+    # Newline in een pad is pathologisch: grep is regel-georiënteerd, dus een
+    # meerregelig pad kan de uitzondering-regex op één regel matchen. Faalt-dicht.
+    case "$fp" in *$'\n'*) deny "ongeldig pad (newline)" ;; esac
     # Rol-definitie mag gelezen worden: de worker draagt elke rol op de
     # .claude/agents/<rol>.md van de doelrepo te volgen. Alleen lezen, alleen
-    # onder agents/, alleen .md — credentials (.credentials.json, /var/run/claude/,
-    # settings.json, …) blijven via de secret-check hieronder geweigerd.
+    # onder agents/, alleen .md.
     if printf '%s' "$fp" | grep -Eq '(^|/)\.claude/agents/[^/]+\.md$'; then
+      # De uitzondering mag geen credential binnenhalen via een symlink — noch de
+      # eindcomponent (rol.md -> .credentials.json) noch een gesymlinkte tussenmap
+      # (.claude of .claude/agents -> elders). Weiger als ÉNIGE component in het
+      # pad een symlink is. Dependency-vrij (alleen [ -L ] + expansie); een niet-
+      # bestaand pad heeft geen symlink-componenten en valt gewoon door naar allow.
+      d=$fp
+      while [ -n "$d" ] && [ "$d" != "/" ] && [ "$d" != "." ]; do
+        if [ -L "$d" ]; then deny "symlink in rol-definitiepad — geweigerd"; fi
+        case "$d" in */*) d=${d%/*} ;; *) break ;; esac
+      done
       exit 0
     fi
     if printf '%s' "$fp" | grep -Eq "$secret_re"; then
