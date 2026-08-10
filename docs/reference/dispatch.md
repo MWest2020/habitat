@@ -58,7 +58,11 @@ Het script exporteert daarnaast `JOB_NAME`, `HABITAT_ROLE`, `HABITAT_CHANGE`,
   `habitat/<rol>/<change>-<run_id>` in de doelrepo (nooit force, nooit
   destructief — een retry overschrijft de vorige run niet). `dispatch.sh` print
   de landende branch als `[dispatch] branch=<naam>`.
-- Naast de code staat `run-report.json` op die branch.
+- Naast de code staat `run-report.json` op die branch. De `diff_hash` daarin
+  dekt uitsluitend de agent-codewijziging; de habitat-artefacten (`.habitat/`,
+  `run-report.json`) vallen erbuiten en de hash is reproduceerbaar vanaf de
+  branch: `git diff <base-ref> HEAD -- . ':(exclude).habitat'
+  ':(exclude)run-report.json' | sha256sum` (zie ook het veld `diff_hash_scope`).
 - Reviewer/security bouwen op de **builder-branch** via
   `HABITAT_BASE_BRANCH`. Gebruik `chain.sh` (zie hieronder) zodat die branch
   automatisch wordt doorgegeven; handmatig kan ook met de naam uit de
