@@ -71,3 +71,69 @@ Het script exporteert daarnaast `JOB_NAME`, `HABITAT_ROLE`, `HABITAT_CHANGE`,
 
 De logs worden gestreamd (`kubectl logs -f`) en gearchiveerd naar
 `$HABITAT_LOGDIR/<job-naam>.log`.
+
+## Runbook: cluster-livetests (add-role-architecture 3.1–3.3)
+
+Draai dit op een host met `kubectl`-toegang tot het `agents`-cluster en een
+verse Claude-sessie (voor de credentials-sync). Plak blok voor blok.
+
+### 0. Pre-flight — image-tag en variabelen
+
+De worker-image is per commit-SHA getagd (`worker-image.yml` → `github.sha`).
+Pak de SHA van de laatste geslaagde build i.p.v. te gokken:
+
+```bash
+# vanuit een clone van MWest2020/habitat, op main
+WORKER_SHA=$(gh run list --workflow worker-image.yml --branch main \
+  --status success --limit 1 --json headSha -q '.[0].headSha')
+export WORKER_IMAGE="ghcr.io/mwest2020/habitat-worker:${WORKER_SHA}"
+export CHANGE="livetest-$(date +%Y%m%d)"   # naam van de test-change op de testrepo
+export REPO="MWest2020/habitat-testrepo"
+echo "image=$WORKER_IMAGE change=$CHANGE repo=$REPO"
+# sanity: de worker-code-inhoud onder test zit in commit 2f2be16 (laatste worker/**).
+kubectl -n agents get sa,role,rolebinding | grep -i architect   # role-architect RBAC aanwezig?
+```
+
+### 3.1 — per rol op de testrepo
+
+```bash
+# architect: schone boom + schema-valide plan in de output, verdict PASS
+dispatch/dispatch.sh architect "$CHANGE" "$REPO"
+
+# builder: bouwt de change en pusht branch habitat/builder/$CHANGE
+dispatch/dispatch.sh builder "$CHANGE" "$REPO"
+
+# reviewer: leest de builder-branch, mag NIET schrijven (Write/Edit geweigerd in de pod-log)
+HABITAT_BASE_BRANCH="habitat/builder/$CHANGE" \
+  dispatch/dispatch.sh reviewer "$CHANGE" "$REPO"
+
+# security: idem — Write/Edit geweigerd in de pod-log
+HABITAT_BASE_BRANCH="habitat/builder/$CHANGE" \
+  dispatch/dispatch.sh security "$CHANGE" "$REPO"
+```
+
+Verwacht: architect → `AFGEROND`, plan in output, schone boom; reviewer/security
+→ in `run-logs/<job>.log` staat een geweigerde `Write`/`Edit` (deny-by-default);
+builder → `AFGEROND` met branch `habitat/builder/$CHANGE`.
+
+Extra check — **Stop-hook blokkeert een builder met falende verify**: draai de
+builder op een change waarvan `scripts/verify.sh` faalt en verwacht
+`MISLUKT`/Job `Failed` (de Stop-hook laat de run niet groen afsluiten).
+
+### 3.2 — idempotentie-smoke
+
+```bash
+dispatch/dispatch.sh architect "$CHANGE" "$REPO" "run-a"
+dispatch/dispatch.sh architect "$CHANGE" "$REPO" "run-b"
+# vergelijk het diff_hash-veld in run-report.json op beide branches → gelijk
+```
+
+### 3.3 — end-to-end keten
+
+Draai architect → builder → reviewer → security op één échte spoke-change en
+controleer dat de verdicts de keten sturen (een rol-`FAIL` zet `VERDICT=failed`
+→ Job `Failed` → dispatch stopt de keten; zie tabel onder *Uitkomst*).
+
+Na groene 3.1–3.3: vink ze af in
+`openspec/changes/add-role-architecture/tasks.md`, draai
+`openspec validate add-role-architecture` en archiveer.
