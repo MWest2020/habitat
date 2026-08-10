@@ -14,7 +14,10 @@ case "$ROLE" in
 esac
 CHANGE=${2:?change-naam}
 REPO=${3:?doelrepo (owner/repo of URL)}
-RUN_ID=${4:-${ROLE}-$(echo "$CHANGE" | tr '/_ ' '---')-$(date +%Y%m%d-%H%M%S)}
+# Schone, unieke run-id: rol/change staan al in het branch-pad, dus alleen
+# tijd + een korte willekeurige component (voorkomt botsing in dezelfde seconde).
+RUN_ID=${4:-$(date +%Y%m%d-%H%M%S)-${RANDOM}}
+BRANCH="habitat/${ROLE}/${CHANGE}-${RUN_ID}"
 
 : "${WORKER_IMAGE:?zet WORKER_IMAGE=ghcr.io/mwest2020/habitat-worker:<sha>}"
 KUBECTL=${KUBECTL:-kubectl}
@@ -58,6 +61,7 @@ else
 fi
 
 echo "[dispatch] Job=$JOB_NAME rol=$ROLE change=$CHANGE repo=$REPO"
+echo "[dispatch] branch=$BRANCH"
 envsubst "$VARS" < "$HERE/job-template.yaml" | $KUBECTL apply -f -
 
 # Wacht tot de pod een terminale/lopende fase heeft, stream dan de logs
@@ -94,7 +98,7 @@ if echo "$conds" | grep -qi 'Failed'; then
   fi
   exit 1
 elif echo "$conds" | grep -qi 'Complete'; then
-  echo "[dispatch] AFGEROND — lees run-report.json op branch habitat/${ROLE}/${CHANGE}"
+  echo "[dispatch] AFGEROND — lees run-report.json op branch ${BRANCH}"
   exit 0
 fi
 echo "[dispatch] onbekende status"; exit 2

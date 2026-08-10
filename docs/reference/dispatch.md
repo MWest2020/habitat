@@ -54,9 +54,23 @@ Het script exporteert daarnaast `JOB_NAME`, `HABITAT_ROLE`, `HABITAT_CHANGE`,
 
 ## Branch- en run-report-conventie
 
-- De worker pusht een branch `habitat/<rol>/<change>` in de doelrepo.
+- De worker pusht een **run-unieke** branch
+  `habitat/<rol>/<change>-<run_id>` in de doelrepo (nooit force, nooit
+  destructief — een retry overschrijft de vorige run niet). `dispatch.sh` print
+  de landende branch als `[dispatch] branch=<naam>`.
 - Naast de code staat `run-report.json` op die branch.
+- Reviewer/security bouwen op de **builder-branch** via
+  `HABITAT_BASE_BRANCH`. Gebruik `chain.sh` (zie hieronder) zodat die branch
+  automatisch wordt doorgegeven; handmatig kan ook met de naam uit de
+  builder-dispatch-output.
 - Merges naar `main` doet **altijd Mark**; dispatch merget nooit.
+
+## Volle keten: `chain.sh`
+
+`dispatch/chain.sh <change> <repo>` draait architect → builder → reviewer →
+security en geeft de run-unieke builder-branch automatisch door aan reviewer en
+security (`HABITAT_BASE_BRANCH`). Zelfde env als `dispatch.sh` (`WORKER_IMAGE`
+verplicht).
 
 ## Uitkomst
 
@@ -64,7 +78,7 @@ Het script exporteert daarnaast `JOB_NAME`, `HABITAT_ROLE`, `HABITAT_CHANGE`,
 
 | Conditie | Melding | Exit |
 |---|---|---|
-| `Complete` | `AFGEROND — lees run-report.json op branch habitat/<rol>/<change>` | `0` |
+| `Complete` | `AFGEROND — lees run-report.json op branch habitat/<rol>/<change>-<run_id>` | `0` |
 | `Failed` (`DeadlineExceeded`) | `TIME-OUT — branch mogelijk deels/niet gepusht` | `1` |
 | `Failed` (overig) | `MISLUKT (<reason>)` | `1` |
 | onbekend | `onbekende status` | `2` |
@@ -94,45 +108,33 @@ echo "image=$WORKER_IMAGE change=$CHANGE repo=$REPO"
 kubectl -n agents get sa,role,rolebinding | grep -i architect   # role-architect RBAC aanwezig?
 ```
 
-### 3.1 — per rol op de testrepo
+### 3.1 + 3.3 — volle keten via `chain.sh`
 
 ```bash
-# architect: schone boom + schema-valide plan in de output, verdict PASS
-dispatch/dispatch.sh architect "$CHANGE" "$REPO"
-
-# builder: bouwt de change en pusht branch habitat/builder/$CHANGE
-dispatch/dispatch.sh builder "$CHANGE" "$REPO"
-
-# reviewer: leest de builder-branch, mag NIET schrijven (Write/Edit geweigerd in de pod-log)
-HABITAT_BASE_BRANCH="habitat/builder/$CHANGE" \
-  dispatch/dispatch.sh reviewer "$CHANGE" "$REPO"
-
-# security: idem — Write/Edit geweigerd in de pod-log
-HABITAT_BASE_BRANCH="habitat/builder/$CHANGE" \
-  dispatch/dispatch.sh security "$CHANGE" "$REPO"
+dispatch/chain.sh "$CHANGE" "$REPO"
 ```
+Draait architect → builder → reviewer → security en threadt de run-unieke
+builder-branch automatisch naar reviewer en security. Verwacht: architect →
+`AFGEROND`, schone boom (`diff_hash` = leeg-hash); builder → `AFGEROND`,
+`GREETING.md`, Stop-hook-verify geslaagd; reviewer/security → `AFGEROND` met
+`diff_hash` = leeg-hash (nul writes → read-only afgedwongen). Verdict-propagatie:
+een rol-`FAIL` zet `VERDICT=failed` → Job `Failed`.
 
-Verwacht: architect → `AFGEROND`, plan in output, schone boom; reviewer/security
-→ in `run-logs/<job>.log` staat een geweigerde `Write`/`Edit` (deny-by-default);
-builder → `AFGEROND` met branch `habitat/builder/$CHANGE`.
+Losse rollen kan ook met `dispatch.sh <rol> <change> <repo>`; pak dan de
+builder-branch uit `[dispatch] branch=…` en geef die als `HABITAT_BASE_BRANCH`
+aan reviewer/security.
 
 Extra check — **Stop-hook blokkeert een builder met falende verify**: draai de
-builder op een change waarvan `scripts/verify.sh` faalt en verwacht
-`MISLUKT`/Job `Failed` (de Stop-hook laat de run niet groen afsluiten).
+builder met `HABITAT_BASE_BRANCH=test/failing-verify` (een branch waarvan
+`scripts/verify.sh` faalt) en verwacht Job `Failed`.
 
 ### 3.2 — idempotentie-smoke
 
 ```bash
-dispatch/dispatch.sh architect "$CHANGE" "$REPO" "run-a"
-dispatch/dispatch.sh architect "$CHANGE" "$REPO" "run-b"
+dispatch/dispatch.sh builder "$CHANGE" "$REPO"   # run-a
+dispatch/dispatch.sh builder "$CHANGE" "$REPO"   # run-b (andere run-unieke branch)
 # vergelijk het diff_hash-veld in run-report.json op beide branches → gelijk
 ```
-
-### 3.3 — end-to-end keten
-
-Draai architect → builder → reviewer → security op één échte spoke-change en
-controleer dat de verdicts de keten sturen (een rol-`FAIL` zet `VERDICT=failed`
-→ Job `Failed` → dispatch stopt de keten; zie tabel onder *Uitkomst*).
 
 Na groene 3.1–3.3: vink ze af in
 `openspec/changes/add-role-architecture/tasks.md`, draai
