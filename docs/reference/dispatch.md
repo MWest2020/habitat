@@ -74,17 +74,20 @@ verplicht).
 
 ## Uitkomst
 
-`dispatch.sh` leest `Job.status.conditions` en vertaalt die naar een exit-code:
+`dispatch.sh` wacht op een **terminale** `Job.status.conditions` (`Complete`
+of `Failed`) en vertaalt die naar een exit-code. De wachttimeout is
+`ACTIVE_DEADLINE_SECONDS + 600s` — ruim genoeg voor scheduling en een cold
+image-pull, zodat een trage start niet als "onbekend" eindigt.
 
 | Conditie | Melding | Exit |
 |---|---|---|
 | `Complete` | `AFGEROND — lees run-report.json op branch habitat/<rol>/<change>-<run_id>` | `0` |
 | `Failed` (`DeadlineExceeded`) | `TIME-OUT — branch mogelijk deels/niet gepusht` | `1` |
 | `Failed` (overig) | `MISLUKT (<reason>)` | `1` |
-| onbekend | `onbekende status` | `2` |
+| geen conditie binnen de timeout | `GEEN uitkomst binnen <n>s` | `2` |
 
-De logs worden gestreamd (`kubectl logs -f`) en gearchiveerd naar
-`$HABITAT_LOGDIR/<job-naam>.log`.
+De logs worden gestreamd (`kubectl logs -f` zodra de pod draait) en
+gearchiveerd naar `$HABITAT_LOGDIR/<job-naam>.log`.
 
 ## Runbook: cluster-livetests (add-role-architecture 3.1–3.3)
 

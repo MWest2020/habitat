@@ -64,14 +64,32 @@ echo "[dispatch] Job=$JOB_NAME rol=$ROLE change=$CHANGE repo=$REPO"
 echo "[dispatch] branch=$BRANCH"
 envsubst "$VARS" < "$HERE/job-template.yaml" | $KUBECTL apply -f -
 
-# Wacht tot de pod een terminale/lopende fase heeft, stream dan de logs
-for _ in $(seq 1 60); do
-  phase=$($KUBECTL -n agents get pods -l job-name="$JOB_NAME" \
-           -o jsonpath='{.items[0].status.phase}' 2>/dev/null || true)
-  case "$phase" in Running|Succeeded|Failed) break ;; esac
-  sleep 2
+# Wacht op een terminale Job-conditie. Timeout = de Job-deadline + ruimte voor
+# scheduling en een (cold) image-pull; anders zou een trage pull ten onrechte
+# als "onbekend" eindigen. Logs worden best-effort gestreamd zodra de pod draait
+# (logs -f blokkeert dan tot de pod klaar is — natuurlijke wacht + zicht).
+WAIT_MAX=$(( ACTIVE_DEADLINE_SECONDS + 600 ))
+conds=""
+logs_streamed=0
+waited=0
+while [ "$waited" -lt "$WAIT_MAX" ]; do
+  conds=$($KUBECTL -n agents get job "$JOB_NAME" \
+           -o jsonpath='{range .status.conditions[?(@.status=="True")]}{.type}={.reason} {end}' \
+           2>/dev/null || true)
+  [ -n "$conds" ] && break
+  if [ "$logs_streamed" -eq 0 ]; then
+    phase=$($KUBECTL -n agents get pods -l job-name="$JOB_NAME" \
+             -o jsonpath='{.items[0].status.phase}' 2>/dev/null || true)
+    case "$phase" in
+      Running|Succeeded|Failed)
+        # blokkeert tot de pod klaar is; daarna direct de conditie lezen
+        $KUBECTL -n agents logs -f "job/$JOB_NAME" 2>/dev/null || true
+        logs_streamed=1
+        continue ;;
+    esac
+  fi
+  sleep 5; waited=$(( waited + 5 ))
 done
-$KUBECTL -n agents logs -f "job/$JOB_NAME" 2>/dev/null || true
 
 # Log archiveren
 LOGDIR=${HABITAT_LOGDIR:-./run-logs}
@@ -79,14 +97,6 @@ mkdir -p "$LOGDIR"
 $KUBECTL -n agents logs "job/$JOB_NAME" > "$LOGDIR/$JOB_NAME.log" 2>/dev/null || true
 echo "[dispatch] log: $LOGDIR/$JOB_NAME.log"
 
-# Uitkomst uit Job.status.conditions (autoritatief)
-conds=""
-for _ in $(seq 1 30); do
-  conds=$($KUBECTL -n agents get job "$JOB_NAME" \
-           -o jsonpath='{range .status.conditions[?(@.status=="True")]}{.type}={.reason} {end}' \
-           2>/dev/null || true)
-  [ -n "$conds" ] && break; sleep 2
-done
 echo "[dispatch] condities: ${conds:-onbekend}"
 
 if echo "$conds" | grep -qi 'Failed'; then
@@ -101,4 +111,6 @@ elif echo "$conds" | grep -qi 'Complete'; then
   echo "[dispatch] AFGEROND — lees run-report.json op branch ${BRANCH}"
   exit 0
 fi
-echo "[dispatch] onbekende status"; exit 2
+# Geen terminale conditie binnen WAIT_MAX (deadline + buffer): iets zit vast
+# (bv. onplanbare pod, image-pull-backoff die de deadline nooit haalt).
+echo "[dispatch] GEEN uitkomst binnen ${WAIT_MAX}s — controleer de Job handmatig"; exit 2
