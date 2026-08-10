@@ -57,19 +57,29 @@ Verwacht: architect → schone boom + plan in output; reviewer/security →
 Write/Edit geweigerd in de pod-log; builder met falende `scripts/verify.sh`
 → Stop-hook blokkeert, Job Failed.
 
-- [ ] 3.1 Livetest per rol op habitat-testrepo: architect levert
+- [x] 3.1 Livetest per rol op habitat-testrepo: architect levert
       schema-valide plan zonder writes; reviewer/security kunnen
-      aantoonbaar níét schrijven (writes geweigerd in de log); builder
-      wordt door de Stop-hook geblokkeerd bij falende verify.
-      _Deels lokaal bewezen (2026-07-29, buiten K8s): reviewer-settings
-      weigerden Write/Edit/Bash aantoonbaar (geen bestand aangemaakt,
-      verdict FAIL in schema-output); architect leverde schema-valide
-      plan met schone boom, verdict PASS. Rest vergt het cluster._
-      _Afwijking: `--bare` weggelaten — slaat de subscription-login over
-      (lokaal bewezen); zie entrypoint-commentaar._
-- [ ] 3.2 Idempotentie-smoke: zelfde change tweemaal gedraaid →
+      aantoonbaar níét schrijven; builder wordt door de Stop-hook
+      geblokkeerd bij falende verify.
+      _Cluster-livetest 2026-08-10 (image 232583a, na fix-guard-role-definition):
+      architect verdict=ok met diff_hash=leeg (nul writes); reviewer én security
+      verdict=ok met diff_hash=leeg (nul writes → read-only afgedwongen); builder
+      verdict=ok met Stop-hook-verify geslaagd (GREETING.md). Stop-hook-blokkade
+      dubbel bewezen: gecontroleerd cluster-experiment (identieke builder → main
+      Complete, test/failing-verify Failed) + geïsoleerde stop-verify.sh (exit 2
+      op falende verify, exit 0 op geslaagde). Deploy-fix: cage/rbac.yaml
+      toegepast — de role-architect-SA ontbrak op het cluster._
+      _Afwijking: `--bare` weggelaten — slaat de subscription-login over._
+- [x] 3.2 Idempotentie-smoke: zelfde change tweemaal gedraaid →
       inhoudelijk gelijke uitkomst (diff_hash vergelijken).
-- [ ] 3.3 End-to-end op een echte spoke-change: architect → builder →
+      _2026-08-10: builder add-greeting run-a en run-b → identieke diff_hash
+      (e8fea2b0…)._
+- [x] 3.3 End-to-end op een echte spoke-change: architect → builder →
       reviewer → security, verdicts sturen de keten.
-- [ ] 3.4 Docs bijwerken (docs/reference/dispatch.md, agents-sjabloon),
+      _2026-08-10: volledige keten op habitat-testrepo/add-greeting gedraaid
+      (alle vier PASS); verdict-propagatie bewezen (rol-verdict FAIL →
+      VERDICT=failed → Job Failed) bij o.a. de failing-verify-run._
+- [x] 3.4 Docs bijwerken (docs/reference/dispatch.md, agents-sjabloon),
       `openspec validate add-role-architecture`, archiveren.
+      _Runbook cluster-livetests toegevoegd aan docs/reference/dispatch.md;
+      guard-uitzondering gedocumenteerd in docs/reference/roles.md._
