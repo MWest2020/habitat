@@ -67,7 +67,10 @@ if [ -n "${HABITAT_BASE_BRANCH:-}" ]; then
   git checkout -B "$HABITAT_BASE_BRANCH" FETCH_HEAD
 fi
 
-BRANCH="habitat/${HABITAT_ROLE}/${HABITAT_CHANGE}"
+# Run-unieke branch: elke run landt op een eigen branch, nooit destructief en
+# zonder force. De keten geeft de builder-branch expliciet door aan reviewer/
+# security (HABITAT_BASE_BRANCH); zie dispatch/chain.sh.
+BRANCH="habitat/${HABITAT_ROLE}/${HABITAT_CHANGE}-${HABITAT_RUN_ID}"
 git checkout -b "$BRANCH"
 BASE_REF=$(git rev-parse HEAD)   # basis vóór de agent; diff_hash meet hiertegen
 export HABITAT_BASE_REF="$BASE_REF"   # stop-verify draait verify.sh uit deze commit
@@ -201,13 +204,9 @@ done < <(git diff --cached --name-only --diff-filter=ACM)
 git add -A
 git commit -q -m "habitat: ${HABITAT_ROLE} run ${HABITAT_RUN_ID} (change ${HABITAT_CHANGE})" \
   || log "commit: niets gewijzigd"
-# Bestaat de remote branch al met andere historie (eerdere run), dan weigert de
-# kale push en zou het run-report verloren gaan. Fallback: push naar een
-# run-unieke branch zodat elke run altijd ergens landt. Nooit force-pushen.
-git push -u origin "$BRANCH" || {
-  log "push geweigerd — run bewaard op ${BRANCH}-${HABITAT_RUN_ID}"
-  git push -u origin "HEAD:refs/heads/${BRANCH}-${HABITAT_RUN_ID}"
-}
+# De branch is uniek per run (bevat run-id), dus de push is altijd een nieuwe
+# branch: geen collision, geen force, geen eerdere run overschreven.
+git push -u origin "$BRANCH"
 log "branch gepusht: ${BRANCH}"
 
 # Exit weerspiegelt de run-uitkomst (Job-status)
