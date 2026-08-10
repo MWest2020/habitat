@@ -17,13 +17,30 @@ from pathlib import Path
 FIELDS = ["prev_hash", "ts", "role", "change", "run_id",
           "verdict", "subtype", "diff_hash", "cost", "turns"]
 
-# De diff_hash dekt uitsluitend de agent-codewijziging: habitat-artefacten
-# (.habitat/ en run-report.json) worden uitgesloten. Zo is de hash reproduceerbaar
-# vanaf de gepushte branch (die die artefacten wél bevat) — `git diff <base> HEAD`
-# mét deze exclusies levert dezelfde hash als op report-tijd.
-DIFF_EXCLUDES = ["--", ".", ":(exclude).habitat", ":(exclude)run-report.json"]
-DIFF_HASH_SCOPE = ("git diff <base-ref> HEAD -- . ':(exclude).habitat' "
-                   "':(exclude)run-report.json' | sha256sum")
+# De diff_hash dekt uitsluitend de agent-codewijziging. Uitgesloten worden EXACT
+# de door habitat gegenereerde artefacten van DÉZE run — op vaste naam + de door
+# dispatch bepaalde run-id, mét `literal`-magic (géén wildcards), niet de hele
+# .habitat/-map. Zo kan een agent geen bestand onder .habitat/ noemen dat buiten
+# de hash valt (`.habitat/evil.py`, `.habitat/run-report-evil.html`, … blijven
+# gehasht) en is de hash tóch reproduceerbaar vanaf de gepushte branch — die die
+# artefacten wél bevat. run-id komt van dispatch, niet van de agent.
+def artifact_excludes(run_id: str) -> list:
+    return [
+        ":(exclude,literal).habitat/audit.jsonl",
+        f":(exclude,literal).habitat/run-report-{run_id}.html",
+        f":(exclude,literal).habitat/run-output-{run_id}.md",
+        ":(exclude,literal)run-report.json",
+    ]
+
+
+def diff_excludes(run_id: str) -> list:
+    return ["--", ".", *artifact_excludes(run_id)]
+
+
+def diff_hash_scope(run_id: str) -> str:
+    return ("git diff <base-ref> HEAD -- . "
+            + " ".join(f"'{e}'" for e in artifact_excludes(run_id))
+            + " | sha256sum")
 
 
 def sha256(s: str) -> str:
@@ -39,8 +56,9 @@ def build_entry(a) -> dict:
     # diff t.o.v. de basis vóór de agent (vangt óók door de agent gecommitte
     # wijzigingen); val terug op --cached als er geen base-ref is meegegeven.
     # Habitat-artefacten uitgesloten -> reproduceerbaar vanaf de branch.
-    diff = (git(a.repo_dir, "diff", a.base_ref, *DIFF_EXCLUDES) if a.base_ref
-            else git(a.repo_dir, "diff", "--cached", *DIFF_EXCLUDES))
+    excl = diff_excludes(a.run_id)
+    diff = (git(a.repo_dir, "diff", a.base_ref, *excl) if a.base_ref
+            else git(a.repo_dir, "diff", "--cached", *excl))
     e = {
         "ts": a.finished_at, "role": a.role, "change": a.change,
         "run_id": a.run_id, "verdict": a.verdict, "subtype": a.subtype,
@@ -51,7 +69,13 @@ def build_entry(a) -> dict:
     if audit.exists():
         lines = [l for l in audit.read_text().splitlines() if l.strip()]
         if lines:
-            prev = json.loads(lines[-1]).get("entry_hash", "")
+            # De laatste regel kan door een agent zijn beschadigd; een kapotte
+            # regel mag het rapport niet laten crashen. prev="" -> de keten breekt
+            # zichtbaar in de in-browser-verificatie (fail-closed).
+            try:
+                prev = json.loads(lines[-1]).get("entry_hash", "")
+            except (json.JSONDecodeError, AttributeError):
+                prev = ""
     e["prev_hash"] = prev
     e["entry_hash"] = sha256("|".join(str(e[f]) if f != "prev_hash" else prev
                                       for f in FIELDS))
@@ -71,8 +95,9 @@ def main() -> None:
 
     hab = Path(a.repo_dir) / ".habitat"
     hab.mkdir(exist_ok=True)
-    stat = (git(a.repo_dir, "diff", a.base_ref, "--stat", *DIFF_EXCLUDES) if a.base_ref
-            else git(a.repo_dir, "diff", "--cached", "--stat", *DIFF_EXCLUDES)).strip()
+    excl = diff_excludes(a.run_id)
+    stat = (git(a.repo_dir, "diff", a.base_ref, "--stat", *excl) if a.base_ref
+            else git(a.repo_dir, "diff", "--cached", "--stat", *excl)).strip()
 
     entry = build_entry(a)
     with (hab / "audit.jsonl").open("a") as fh:
@@ -85,9 +110,11 @@ def main() -> None:
         "total_cost_usd": a.cost, "num_turns": a.turns,
         "claude_exit": a.exit, "finished_at": a.finished_at,
         "diff_hash": entry["diff_hash"],
-        # Reproduceerbaar vanaf de branch: de commit bevat óók habitat-artefacten
-        # (.habitat/, dit bestand) die buiten de diff_hash vallen.
-        "diff_hash_scope": DIFF_HASH_SCOPE,
+        # Reproduceerbaar vanaf de branch: de commit bevat óók de door habitat
+        # gegenereerde artefacten van deze run (audit.jsonl, run-report-<id>.html,
+        # run-output-<id>.md, dit bestand) die buiten de diff_hash vallen; overige
+        # .habitat/-writes van de agent vallen er WÉL binnen.
+        "diff_hash_scope": diff_hash_scope(a.run_id),
     }, indent=2) + "\n")
 
     chain = [json.loads(l) for l in (hab / "audit.jsonl").read_text().splitlines()
