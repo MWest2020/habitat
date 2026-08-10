@@ -67,6 +67,12 @@ Het script exporteert daarnaast `JOB_NAME`, `HABITAT_ROLE`, `HABITAT_CHANGE`,
   onder `.habitat/` schrijft wél meetelt (geen smokkelkanaal). Het exacte
   reproductie-commando (mét de concrete run-id) staat in het veld
   `diff_hash_scope` van `run-report.json`.
+- De agent-eind-uitvoer (`result`) staat als `.habitat/run-output-<run-id>.md`
+  op de branch. Habitat schrijft dit bestand **altijd** — ook zonder leesbaar
+  `result` (dan een placeholder) — ná de diff-hash, zodat het artefact
+  deterministisch habitat-eigendom is en een agent er geen eigen versie voor kan
+  smokkelen. Een onleesbare `.habitat/audit.jsonl`-regel is fail-closed: het
+  rapport crasht niet en toont zo'n regel als expliciet gebroken rij.
 - Reviewer/security bouwen op de **builder-branch** via
   `HABITAT_BASE_BRANCH`. Gebruik `chain.sh` (zie hieronder) zodat die branch
   automatisch wordt doorgegeven; handmatig kan ook met de naam uit de

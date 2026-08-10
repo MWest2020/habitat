@@ -82,6 +82,33 @@ def build_entry(a) -> dict:
     return e
 
 
+def agent_result(output_file: str) -> str:
+    """Lees het `result`-veld uit het `claude -p`-JSON-eindobject. Robuust: geeft
+    "" terug bij ontbrekend/onleesbaar/niet-object JSON of een niet-string result."""
+    if not output_file:
+        return ""
+    try:
+        data = json.loads(Path(output_file).read_text())
+    except (OSError, json.JSONDecodeError):
+        return ""
+    r = data.get("result") if isinstance(data, dict) else None
+    return r if isinstance(r, str) else ""
+
+
+def write_run_output(a, hab: Path) -> None:
+    """Bewaar de agent-eind-uitvoer als markdown-artefact. ALTIJD schrijven — óók
+    zonder leesbaar `result` (dan een placeholder) — zodat habitat dit bestand
+    deterministisch bezit en een agent geen eigen `.habitat/run-output-<id>.md` kan
+    smokkelen die buiten de diff_hash valt. Wordt ná de hash aangeroepen en is per
+    exacte naam uitgesloten, dus de hash-waarde blijft gelijk."""
+    result = agent_result(a.output_file)
+    body = result if result.strip() else "_(geen agent-result in de CLI-output)_"
+    md = (f"# Habitat {a.role} — {a.change}\n\n"
+          f"_run_id {a.run_id} · verdict {a.verdict} · {a.finished_at}_\n\n---\n\n"
+          f"{body}\n")
+    (hab / f"run-output-{a.run_id}.md").write_text(md)
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     for f in ("role", "change", "run-id", "verdict", "subtype", "repo",
@@ -89,6 +116,7 @@ def main() -> None:
         p.add_argument("--" + f, default="")
     p.add_argument("--repo-dir", default=".")
     p.add_argument("--base-ref", default="")
+    p.add_argument("--output-file", default="")
     a = p.parse_args()
     a.run_id = a.run_id or ""
     a.finished_at = a.finished_at or ""
@@ -117,10 +145,30 @@ def main() -> None:
         "diff_hash_scope": diff_hash_scope(a.run_id),
     }, indent=2) + "\n")
 
-    chain = [json.loads(l) for l in (hab / "audit.jsonl").read_text().splitlines()
-             if l.strip()]
+    # Fail-closed: een door de agent beschadigde regel mag het rapport niet laten
+    # crashen. Onleesbare/niet-object regels worden NIET stil weggelaten maar als
+    # expliciet gebroken rij getoond (lege entry_hash -> de in-browser-verificatie
+    # markeert ze ✗ gebroken). Zo kan een agent de keten niet "opschonen" door alle
+    # eerdere regels te bederven; de rij blijft zichtbaar in het rapport.
+    chain = []
+    for l in (hab / "audit.jsonl").read_text().splitlines():
+        if not l.strip():
+            continue
+        try:
+            obj = json.loads(l)
+        except json.JSONDecodeError:
+            obj = None
+        if isinstance(obj, dict):
+            chain.append(obj)
+        else:
+            chain.append({"run_id": "(onleesbare regel)", "entry_hash": "",
+                          "prev_hash": ""})
     (hab / f"run-report-{a.run_id}.html").write_text(render(entry, stat, chain))
-    print(f"[report] .habitat/audit.jsonl (+1) + run-report-{a.run_id}.html")
+
+    # Agent-eind-uitvoer als markdown — altijd, ná de hash (zie write_run_output).
+    write_run_output(a, hab)
+    print(f"[report] .habitat/audit.jsonl (+1) + run-report-{a.run_id}.html "
+          f"+ run-output-{a.run_id}.md")
 
 
 def render(e: dict, stat: str, chain: list) -> str:

@@ -167,27 +167,19 @@ if grep -Eq "$SECRET_RE" "$OUT" 2>/dev/null \
 fi
 log "verdict=${VERDICT} rol-verdict=${ROLE_VERDICT:-geen} subtype=${SUBTYPE} cost=${COST} turns=${TURNS}"
 
-# 6. Stage de agent-wijziging, genereer hash-chained audit + HTML-run-rapport
+# 6. Stage de agent-wijziging, genereer hash-chained audit + HTML-run-rapport +
+# de agent-eind-uitvoer (.habitat/run-output-<id>.md). habitat_report.py schrijft
+# run-output ALTIJD (ook zonder .result: placeholder) en ná de diff-hash, zodat
+# habitat dat artefact bezit en het de hash niet vervuilt. --output-file wijst naar
+# het claude -p-JSON-eindobject waaruit het `result`-veld wordt gehaald.
 git add -A
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 python3 /opt/habitat/report/habitat_report.py \
   --repo-dir . --role "$HABITAT_ROLE" --change "$HABITAT_CHANGE" \
   --run-id "$HABITAT_RUN_ID" --verdict "$VERDICT" --subtype "$SUBTYPE" \
   --cost "$COST" --turns "$TURNS" --exit "$CLAUDE_EXIT" \
-  --finished-at "$NOW" --repo "$REPO_URL" --base-ref "$BASE_REF"
-
-# 6b. Bewaar de agent-eind-uitvoer (o.a. de review-tekst) als markdown op de branch.
-# Ná habitat_report.py zodat dit de code-diff-hash niet vervuilt — net als
-# run-report.json is dit een habitat-artefact, geen agent-codewijziging.
-if jq -e 'has("result")' "$OUT" >/dev/null 2>&1; then
-  OUTPUT_MD=".habitat/run-output-${HABITAT_RUN_ID}.md"
-  {
-    printf '# Habitat %s — %s\n\n' "$HABITAT_ROLE" "$HABITAT_CHANGE"
-    printf '_run_id %s · verdict %s · %s_\n\n---\n\n' "$HABITAT_RUN_ID" "$VERDICT" "$NOW"
-    jq -r '.result // ""' "$OUT"
-  } > "$OUTPUT_MD"
-  log "agent-uitvoer bewaard: ${OUTPUT_MD}"
-fi
+  --finished-at "$NOW" --repo "$REPO_URL" --base-ref "$BASE_REF" \
+  --output-file "$OUT"
 
 # 6c. Secret-scrub: redigeer de waarde in alle te committen bestanden (SECRET_RE
 # is in 5b gedefinieerd; de verdict-flip is daar al gebeurd). Defense-in-depth (B1).
