@@ -40,6 +40,8 @@
       `worker/entrypoint.sh` clean; py-syntax ok; `openspec validate`.
 - [x] 5.2 Code-review reviewer + security in verse context; beide PASS.
       Security-F1 (onleesbare regels stil weggelaten) verwerkt.
-- [ ] 5.3 Nieuwe image; cluster-sanity: een run → `.habitat/run-output-<id>.md`
-      aanwezig en habitat-geschreven; `diff_hash` blijft reproduceerbaar vanaf de
-      branch. Daarna afvinken/archiveren.
+- [x] 5.3 Nieuwe image (`worker-image` @ `e5dcfac`); cluster-sanity: builder-run
+      op `habitat-testrepo` (run-id `harden-sanity-002707`) →
+      `.habitat/run-output-harden-sanity-002707.md` aanwezig en habitat-geschreven
+      (`# Habitat builder — add-greeting`, header met run-id/verdict), buiten de
+      diff-hash-scope; `diff_hash` (`fc5105dd…`) reproduceert exact vanaf de branch.

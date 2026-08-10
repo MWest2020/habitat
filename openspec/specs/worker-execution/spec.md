@@ -97,10 +97,14 @@ zodat het run-resultaat reconstrueerbaar is los van de vluchtige `kubectl logs`.
 De worker SHALL daarnaast de inhoudelijke eind-uitvoer van de agent (het
 `result`-veld uit het `claude -p`-JSON-eindobject) als markdown bewaren in
 `.habitat/run-output-<run_id>.md` en meecommitten op de branch, zodat reviews en
-bevindingen reconstrueerbaar blijven nadat de pod is opgeruimd. Dit bestand SHALL ná
-de audit/diff-hash-berekening worden geschreven, zodat het de code-diff-hash niet
-beïnvloedt. Ontbreekt of faalt het JSON-eindobject, dan SHALL de worker dit bestand
-overslaan zonder de run te laten crashen.
+bevindingen reconstrueerbaar blijven nadat de pod is opgeruimd. Dit bestand SHALL
+ná de audit/diff-hash-berekening worden geschreven, zodat het de code-diff-hash
+niet beïnvloedt. De worker SHALL dit bestand **altijd** schrijven — óók wanneer
+het JSON-eindobject ontbreekt of onparseerbaar is — dan met een placeholder in
+plaats van de agent-uitvoer. Zo bezit habitat dit artefact-bestand deterministisch
+en kan een agent geen eigen `.habitat/run-output-<run_id>.md` op de branch
+smokkelen die buiten de diff-hash valt (die is per exacte naam uitgesloten). Het
+schrijven SHALL de run niet laten crashen.
 
 #### Scenario: Rapport na een run
 
@@ -116,9 +120,18 @@ overslaan zonder de run te laten crashen.
 
 #### Scenario: Gecrashte run zonder parseerbare JSON
 
-- **WHEN** `claude -p` geen parseerbaar JSON-eindobject oplevert
-- **THEN** slaat de worker het uitvoer-bestand over
+- **WHEN** `claude -p` geen parseerbaar JSON-eindobject (of geen `result`) oplevert
+- **THEN** bevat de branch tóch `.habitat/run-output-<run_id>.md`, met een
+  placeholder in plaats van de agent-uitvoer
 - **AND** eindigt de run zonder extra fout door dit onderdeel
+
+#### Scenario: Geen gesmokkelde run-output
+
+- **WHEN** een agent zelf een `.habitat/run-output-<run_id>.md` schrijft vóór het
+  rapport
+- **THEN** overschrijft habitat dat bestand met de eigen (placeholder- of
+  `result`-)inhoud, zodat geen agent-gestuurde inhoud buiten de diff-hash op de
+  branch belandt
 
 ### Requirement: Doel-repo-deps runtime, worker-tools gebakken
 
