@@ -52,6 +52,17 @@ Daarnaast newlines in `file_path` geweigerd (regel-georiënteerde grep, faalt-di
 
 ## Bekende, niet-in-scope (follow-up)
 
-`Glob`/`Grep` vallen niet onder deze guard (geen `case`-tak) — een tweede
-leespad dat credentials zou kunnen benaderen. Pre-existing, niet door deze
-change geraakt; kandidaat voor een aparte change.
+Uit de security-review (ronde 2), allemaal pre-existing en niet door deze change
+verergerd — kandidaten voor een aparte change:
+
+- **`Glob`/`Grep`** vallen niet onder deze guard (geen `case`-tak) — een tweede
+  leespad naar credentials.
+- **Hardlinks**: de symlink-walk gebruikt `[ -L ]` en vangt geen hardlink. Git
+  draagt geen hardlinks mee (dus de poisoned-repo-route blijft dicht), en wie
+  runtime een hardlink kan leggen (alleen de builder, via code-exec) kan de
+  credential toch al direct kopiëren. Hardening-optie: eindcomponent `stat`-en
+  en weigeren bij link-count > 1, of bevestigen dat het pad binnen `/work/repo`
+  blijft.
+- **Interpreter-exfil**: de guard is regex-op-commandostring en wordt door elke
+  toegestane interpreter (`make`/`pytest`/`uvx`/`npx`/`uv run`) omzeild. Dit is
+  het dominante restrisico van het model, los van deze change.
