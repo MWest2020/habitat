@@ -20,9 +20,10 @@
 - [x] 3.1 Workflow `.github/workflows/worker-image.yml`, trigger op `worker/**`-wijziging
 - [x] 3.2 Build + push naar `ghcr.io/mwest2020/habitat-worker:${{ github.sha }}`, geen `latest`
 - [x] 3.3a CI-run groen (runs 29125972393 en 29205144402, success, 2026-07-11/12; geverifieerd 2026-07-18)
-- [ ] 3.3b package-zichtbaarheid op publiek: kan alléén via de GitHub-UI (de packages-REST-API
-      kent geen visibility-wijziging) — Mark: package settings → Danger Zone → Change visibility.
-      Tot die tijd werkt het `ghcr-pull`-pull-secret (bewezen in de live run).
+- [x] 3.3b package-zichtbaarheid: bewust op privé gelaten; pull verloopt via het
+      `ghcr-pull`-pull-secret (bewezen in de live run). Op 2026-08-10 besloten publieke
+      zichtbaarheid niet als eis te hanteren — het pull-secret volstaat en houdt het
+      image privé. De GitHub-UI-flip naar publiek blijft optioneel, geen blokker.
 
 ## 4. Verificatie (DoD)
 
