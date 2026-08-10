@@ -33,6 +33,9 @@
       round 2 FAIL (naam-wildcard `run-report-*.html`/`run-output-*.md` nog
       agent-noembaar, `*` matcht ook `/`) → verholpen met exacte run-id-exclusie
       (`literal`, geen wildcard) + uitgebreide anti-smokkel-test.
-- [ ] 3.3 Nieuwe image; cluster-sanity: een run → `run-report.json` heeft
-      `diff_hash_scope`, en `git diff <base> HEAD` mét exclusies op de branch
-      reproduceert de opgeslagen `diff_hash`. Daarna afvinken/archiveren.
+- [x] 3.3 Nieuwe image (`worker-image` @ `084f9db`); cluster-sanity: builder-run
+      op `habitat-testrepo` (run-id `diffhash-sanity-182631`) → `run-report.json`
+      heeft `diff_hash_scope` (met concrete run-id), en `git diff <base> HEAD` mét
+      de exacte run-id-exclusies op de branch reproduceert de opgeslagen
+      `diff_hash` (`fc5105dd…`) exact — agent-code (`GREETING.md`, `tasks.md`)
+      gedekt, run-artefacten uitgesloten.
