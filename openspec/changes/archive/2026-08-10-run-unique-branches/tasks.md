@@ -28,6 +28,14 @@
       `|| true`), reachable "geen branch"-melding, `unset HABITAT_BASE_BRANCH` aan
       het begin. CHANGE-sanitatie: pre-existing en fail-safe (checkout -b weigert
       gevaarlijke vormen) — genoteerd, niet in scope._
-- [ ] 3.3 Nieuwe image; cluster-verificatie: `chain.sh` op habitat-testrepo →
-      run-unieke branchnamen, reviewer/security lezen aantoonbaar de juiste
-      builder-branch; daarna afvinken/archiveren.
+- [x] 3.3 Nieuwe image (4b11c83); cluster-verificatie met `chain.sh` op
+      habitat-testrepo (2026-08-10): run-unieke branchnamen bevestigd
+      (`habitat/<rol>/<change>-<datum>-<tijd>-<rand>`), `dispatch.sh` print de
+      branch, en de reviewer checkte aantoonbaar de builder-branch uit
+      (`HABITAT_BASE_BRANCH`-threading werkt). De keten-gate stopte bij de
+      reviewer-FAIL (security draaide niet) → verdict-propagatie werkt.
+      _NB: de reviewer-FAIL was een fixture-artefact (add-greeting-taak 2.1 is
+      per constructie onbewijsbaar: de verify-gate laat geen exitcode-artefact
+      achter), niet een gebrek in deze change. Fixture-polish + de door de
+      reviewer genoemde audit-telling (rapport 2 vs. commit 6 bestanden) als
+      losse follow-up genoteerd._
