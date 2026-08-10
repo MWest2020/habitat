@@ -20,7 +20,7 @@ tool=$(jq -r '.tool_name // ""' <<<"$payload") || deny "guard: payload niet te p
 # alleen start/slash, zodat een pad ook midden in een Bash-commando wordt gevangen
 # (bv. 'cat .env', 'git show HEAD:.env', 'grep x /proc/self/environ').
 b='(^|[^A-Za-z0-9_])'   # start of niet-woordteken (spatie, /, :, =, quote, --)
-secret_re="${b}\.env(\$|[^A-Za-z0-9])|/secrets/|\.pem(\$|[^A-Za-z0-9])|${b}id_rsa|\.credentials\.json(\$|[^A-Za-z0-9])|/\.claude/|/var/run/claude/|${b}proc/|${b}sys/"
+secret_re="${b}\.env(\$|[^A-Za-z0-9])|/secrets/|\.pem(\$|[^A-Za-z0-9])|${b}id_rsa|\.credentials\.json(\$|[^A-Za-z0-9])|${b}\.claude/|/var/run/claude/|${b}proc/|${b}sys/"
 
 case "$tool" in
   Bash)
@@ -36,8 +36,22 @@ case "$tool" in
       deny "commando raakt een secrets-/credential-pad"
     fi
     ;;
-  Read|Edit|Write|NotebookEdit)
+  Read)
+    fp=$(jq -r '.tool_input.file_path // ""' <<<"$payload")
+    # Rol-definitie mag gelezen worden: de worker draagt elke rol op de
+    # .claude/agents/<rol>.md van de doelrepo te volgen. Alleen lezen, alleen
+    # onder agents/, alleen .md — credentials (.credentials.json, /var/run/claude/,
+    # settings.json, …) blijven via de secret-check hieronder geweigerd.
+    if printf '%s' "$fp" | grep -Eq '(^|/)\.claude/agents/[^/]+\.md$'; then
+      exit 0
+    fi
+    if printf '%s' "$fp" | grep -Eq "$secret_re"; then
+      deny "secrets-/credential-pad geblokkeerd"
+    fi
+    ;;
+  Edit|Write|NotebookEdit)
     fp=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // ""' <<<"$payload")
+    # Geen uitzondering voor schrijven: .claude/ blijft volledig dicht.
     if printf '%s' "$fp" | grep -Eq "$secret_re"; then
       deny "secrets-/credential-pad geblokkeerd"
     fi
