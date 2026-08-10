@@ -79,7 +79,11 @@ elk gevonden geheim.
 2. **PreToolUse-guard** (`worker/hooks/pretooluse-guard.sh`) — draait bij
    ALLE vier de rollen, ongeacht de allowlist, en faalt dicht op push-,
    secrets- en credential-paden (ook via Bash-lezers); bij een
-   parse-/logicafout wordt de tool geweigerd, niet toegestaan.
+   parse-/logicafout wordt de tool geweigerd, niet toegestaan. Uitzondering:
+   een rol mag zijn eigen roldefinitie **lezen** — `Read` op
+   `.claude/agents/<rol>.md` — omdat de worker elke rol opdraagt die te volgen;
+   de rest van `.claude/` (credentials, settings) blijft dicht, `Edit`/`Write`
+   op `.claude/` ook, en een symlink in dat pad wordt geweigerd.
 3. **Container + Cilium** — de buitenste grens: non-root pod zonder
    capabilities, per rol een eigen ServiceAccount zonder token of
    RBAC-rechten (`role-architect`/`role-builder`/`role-reviewer`/

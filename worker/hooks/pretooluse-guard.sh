@@ -20,7 +20,7 @@ tool=$(jq -r '.tool_name // ""' <<<"$payload") || deny "guard: payload niet te p
 # alleen start/slash, zodat een pad ook midden in een Bash-commando wordt gevangen
 # (bv. 'cat .env', 'git show HEAD:.env', 'grep x /proc/self/environ').
 b='(^|[^A-Za-z0-9_])'   # start of niet-woordteken (spatie, /, :, =, quote, --)
-secret_re="${b}\.env(\$|[^A-Za-z0-9])|/secrets/|\.pem(\$|[^A-Za-z0-9])|${b}id_rsa|\.credentials\.json(\$|[^A-Za-z0-9])|/\.claude/|/var/run/claude/|${b}proc/|${b}sys/"
+secret_re="${b}\.env(\$|[^A-Za-z0-9])|/secrets/|\.pem(\$|[^A-Za-z0-9])|${b}id_rsa|\.credentials\.json(\$|[^A-Za-z0-9])|${b}\.claude/|/var/run/claude/|${b}proc/|${b}sys/"
 
 case "$tool" in
   Bash)
@@ -36,8 +36,34 @@ case "$tool" in
       deny "commando raakt een secrets-/credential-pad"
     fi
     ;;
-  Read|Edit|Write|NotebookEdit)
+  Read)
+    fp=$(jq -r '.tool_input.file_path // ""' <<<"$payload")
+    # Newline in een pad is pathologisch: grep is regel-georiënteerd, dus een
+    # meerregelig pad kan de uitzondering-regex op één regel matchen. Faalt-dicht.
+    case "$fp" in *$'\n'*) deny "ongeldig pad (newline)" ;; esac
+    # Rol-definitie mag gelezen worden: de worker draagt elke rol op de
+    # .claude/agents/<rol>.md van de doelrepo te volgen. Alleen lezen, alleen
+    # onder agents/, alleen .md.
+    if printf '%s' "$fp" | grep -Eq '(^|/)\.claude/agents/[^/]+\.md$'; then
+      # De uitzondering mag geen credential binnenhalen via een symlink — noch de
+      # eindcomponent (rol.md -> .credentials.json) noch een gesymlinkte tussenmap
+      # (.claude of .claude/agents -> elders). Weiger als ÉNIGE component in het
+      # pad een symlink is. Dependency-vrij (alleen [ -L ] + expansie); een niet-
+      # bestaand pad heeft geen symlink-componenten en valt gewoon door naar allow.
+      d=$fp
+      while [ -n "$d" ] && [ "$d" != "/" ] && [ "$d" != "." ]; do
+        if [ -L "$d" ]; then deny "symlink in rol-definitiepad — geweigerd"; fi
+        case "$d" in */*) d=${d%/*} ;; *) break ;; esac
+      done
+      exit 0
+    fi
+    if printf '%s' "$fp" | grep -Eq "$secret_re"; then
+      deny "secrets-/credential-pad geblokkeerd"
+    fi
+    ;;
+  Edit|Write|NotebookEdit)
     fp=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // ""' <<<"$payload")
+    # Geen uitzondering voor schrijven: .claude/ blijft volledig dicht.
     if printf '%s' "$fp" | grep -Eq "$secret_re"; then
       deny "secrets-/credential-pad geblokkeerd"
     fi
