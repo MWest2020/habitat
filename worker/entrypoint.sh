@@ -75,11 +75,33 @@ git checkout -b "$BRANCH"
 BASE_REF=$(git rev-parse HEAD)   # basis vóór de agent; diff_hash meet hiertegen
 export HABITAT_BASE_REF="$BASE_REF"   # stop-verify draait verify.sh uit deze commit
 
+# Optioneel: taak/context uit de DÓELREPO (amend-worker-task-ref). Dit is git,
+# geen nieuw invoerkanaal — de boomhuis-brug schrijft het bestand in de repo en
+# geeft alleen het pad mee. Pad-begrenzing binnen de repo; fail-closed bij
+# misbruik (absoluut pad, .., of niet-bestaand), net als een ontbrekende env.
+TASK_CONTEXT=""
+if [ -n "${HABITAT_TASK_REF:-}" ]; then
+  case "$HABITAT_TASK_REF" in
+    /*|*..*) log "HABITAT_TASK_REF ongeldig (absoluut of ..): ${HABITAT_TASK_REF}"; exit 1 ;;
+  esac
+  if [ ! -f "$WORK/$HABITAT_TASK_REF" ]; then
+    log "HABITAT_TASK_REF bestaat niet in de repo: ${HABITAT_TASK_REF}"; exit 1
+  fi
+  TASK_CONTEXT="$(cat "$WORK/$HABITAT_TASK_REF")"
+  log "taak-referentie geladen: ${HABITAT_TASK_REF} ($(wc -c < "$WORK/$HABITAT_TASK_REF") bytes)"
+fi
+
 # 4. Rol-prompt — rollen leven in .claude/agents/ van de DÓELREPO, niet in Habitat
 PROMPT="Je bent de '${HABITAT_ROLE}'-agent voor deze repository. Volg
 .claude/agents/${HABITAT_ROLE}.md en het project-CLAUDE.md, en werk aan de
 OpenSpec-change '${HABITAT_CHANGE}'. Maak uitsluitend wijzigingen die bij die rol
 en die change horen."
+if [ -n "$TASK_CONTEXT" ]; then
+  PROMPT="${PROMPT}
+
+Aanvullende taak/context (uit ${HABITAT_TASK_REF} in de repo):
+${TASK_CONTEXT}"
+fi
 
 OUT=/work/claude-output.json
 log "claude -p (rol=${HABITAT_ROLE}, budget=\$${MAX_BUDGET})"
