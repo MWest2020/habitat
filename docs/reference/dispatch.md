@@ -156,3 +156,13 @@ dispatch/dispatch.sh builder "$CHANGE" "$REPO"   # run-b (andere run-unieke bran
 Na groene 3.1–3.3: vink ze af in
 `openspec/changes/add-role-architecture/tasks.md`, draai
 `openspec validate add-role-architecture` en archiveer.
+
+## Optionele taak-referentie (amend-worker-task-ref)
+
+`HABITAT_TASK_REF` (optioneel) = een pad relatief aan de doelrepo-root naar een
+taak/context-bestand. De worker leest het ná de checkout uit de gecloonde repo en
+voegt de inhoud als context aan de rol-prompt toe — dit is git, geen nieuw
+invoerkanaal. Pad-begrenzing binnen de repo; een absoluut pad, `..`, of een
+niet-bestaand bestand is fail-closed (exit, geen run). Gebruikt door de
+boomhuis-brug (add-habitat-bridge): de orchestrator commit het taakbestand in de
+doelrepo en geeft het pad mee.

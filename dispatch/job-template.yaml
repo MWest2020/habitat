@@ -39,6 +39,7 @@ spec:
             - { name: HABITAT_CHANGE, value: "${HABITAT_CHANGE}" }
             - { name: HABITAT_RUN_ID, value: "${HABITAT_RUN_ID}" }
             - { name: HABITAT_BASE_BRANCH, value: "${HABITAT_BASE_BRANCH}" }
+            - { name: HABITAT_TASK_REF, value: "${HABITAT_TASK_REF}" }
             - { name: HABITAT_MAX_BUDGET_USD, value: "${HABITAT_MAX_BUDGET_USD}" }
             - name: GIT_PAT
               valueFrom:
