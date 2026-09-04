@@ -10,6 +10,9 @@ browser herberekend (crypto.subtle) — dit script tikt hashes nooit over.
 
 Draaien vanuit een checkout van de DOELrepo met de habitat/*-refs gefetcht:
     python3 report/dashboard.py --repo-dir ../wordsworth --out docs/audit-dashboard.html
+
+Zijn die branches opgeruimd, draai dan tegen de geborgde snapshot:
+    python3 report/dashboard.py --snapshot .habitat/runs/wordsworth/runs.json
 """
 import argparse
 import json
@@ -93,8 +96,12 @@ def collect(repo, prefix, base_branch):
     return runs
 
 
-def build(repo, prefix, base_branch, findings):
-    runs = collect(repo, prefix, base_branch)
+def build(repo, prefix, base_branch, findings, snapshot=None):
+    if snapshot:
+        runs = json.loads(Path(snapshot).read_text())
+        runs.sort(key=lambda r: (r["change"], ROLE_ORDER.get(r["role"], 9)))
+    else:
+        runs = collect(repo, prefix, base_branch)
     if not runs:
         raise SystemExit("geen habitat/*-branches met audit.jsonl gevonden")
     date = max(r["ts"] for r in runs)[:10]
@@ -114,6 +121,8 @@ def main():
     p.add_argument("--base-branch", default="origin/main")
     p.add_argument("--findings", default=str(here / "dashboard-findings.json"))
     p.add_argument("--out", default=str(here.parent / "docs" / "audit-dashboard.html"))
+    p.add_argument("--snapshot", help="runs.json van opgeruimde branches "
+                                      "(bv. .habitat/runs/<repo>/runs.json) i.p.v. live refs")
     a = p.parse_args()
 
     findings = DEFAULT_FINDINGS
@@ -121,7 +130,7 @@ def main():
     if fp.exists():
         findings = json.loads(fp.read_text())
 
-    html = build(a.repo_dir, a.prefix, a.base_branch, findings)
+    html = build(a.repo_dir, a.prefix, a.base_branch, findings, a.snapshot)
     Path(a.out).write_text(html)
     n = html.count('"run_id"')
     print(f"[dashboard] {a.out} — {n} runs, basis {a.base_branch}")
