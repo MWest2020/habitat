@@ -37,7 +37,33 @@ deny-by-default via `--permission-mode dontAsk`) en een output-JSON-schema
 | `ACTIVE_DEADLINE_SECONDS` | `1800` | `activeDeadlineSeconds` op de Job |
 | `PAT_SECRET` | `pat-node-01` | secret met `GIT_PAT` (git-auth over HTTPS) |
 | `HABITAT_LOGDIR` | `./run-logs` | doelmap voor gearchiveerde logs |
-| `CLAUDE_CREDS_FILE` | `~/.claude/.credentials.json` | bron voor de `claude-credentials`-sync per dispatch (subscription-token verloopt ~8u); leeg = sync overslaan |
+| `CLAUDE_CREDS_FILE` | `~/.claude/.credentials.json` | bron voor de `claude-credentials`-sync per dispatch (subscription-token verloopt ~8u); leeg = sync overslaan. Overbodig zodra het Secret `claude-oauth-token` bestaat — zie hieronder |
+
+## Worker-auth
+
+De entrypoint kiest, in deze volgorde:
+
+1. **`CLAUDE_CODE_OAUTH_TOKEN`** uit het optionele Secret `claude-oauth-token`
+   (sleutel `token`). Een `claude setup-token`-token: subscription-auth die een
+   jaar geldig is, dus geen sync per dispatch en geen verlopen token halverwege
+   een keten. Aanmaken op een host met browser-toegang:
+
+   ```
+   claude setup-token
+   kubectl -n agents create secret generic claude-oauth-token --from-literal=token=<token>
+   ```
+
+   Daarna mag `CLAUDE_CREDS_FILE=` (leeg) en kan het Secret
+   `claude-credentials` weg; beide mounts zijn `optional`.
+2. **Gemounte sessie-credentials** (`claude-credentials`) — het oude
+   sub-first-pad, alleen vers zolang `dispatch.sh` ze meesynchroniseert.
+3. **`ANTHROPIC_API_KEY`** — Console-key, verloopt niet, maar rekent per token
+   af buiten het abonnement om.
+
+Workers refreshen nooit zelf: een refresh in een wegwerp-Job kan de
+refresh-token roteren zonder te persisteren, wat bij parallelle runs racet.
+Vandaar dat optie 1 de voorkeur heeft boven een steeds opnieuw te synchroniseren
+sessie-token.
 
 Het script exporteert daarnaast `JOB_NAME`, `HABITAT_ROLE`, `HABITAT_CHANGE`,
 `HABITAT_REPO` en `HABITAT_RUN_ID` naar het manifest (via `envsubst`).

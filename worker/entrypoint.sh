@@ -28,9 +28,22 @@ ROLE_SCHEMA="/opt/habitat/schemas/${HABITAT_ROLE}.json"
 [ -f "$ROLE_SETTINGS" ] || fail "settings ontbreken: $ROLE_SETTINGS"
 [ -f "$ROLE_SCHEMA" ]   || fail "schema ontbreekt: $ROLE_SCHEMA"
 
-# 1b. Auth — sub-first: gemounte Claude-subscription-credentials; anders ANTHROPIC_API_KEY
+# 1b. Auth — drie bronnen, in deze volgorde:
+#   1. CLAUDE_CODE_OAUTH_TOKEN — een `claude setup-token`-token (subscription,
+#      één jaar geldig). Voorkeur voor het cluster: het verloopt niet binnen
+#      een dispatch-venster, dus de orchestrator hoeft de ~8-uurs
+#      sessie-credentials niet meer bij élke dispatch te synchroniseren (zie
+#      dispatch.sh; workers refreshen bewust nooit zelf). Rotatie: eens per
+#      jaar het Secret vervangen.
+#   2. Gemounte sessie-credentials — het oude sub-first-pad. Blijft werken,
+#      maar is alleen vers zolang dispatch.sh ze meesynchroniseert.
+#   3. ANTHROPIC_API_KEY — Console-key, verloopt niet, maar rekent per token
+#      af buiten het abonnement om.
 CRED_SRC="${CLAUDE_CREDENTIALS_FILE:-/var/run/claude/credentials.json}"
-if [ -f "$CRED_SRC" ]; then
+if [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+  export CLAUDE_CODE_OAUTH_TOKEN
+  log "auth: CLAUDE_CODE_OAUTH_TOKEN (setup-token)"
+elif [ -f "$CRED_SRC" ]; then
   mkdir -p "$HOME/.claude"
   install -m 600 "$CRED_SRC" "$HOME/.claude/.credentials.json"
   log "auth: subscription-credentials"
@@ -38,7 +51,7 @@ elif [ -n "${ANTHROPIC_API_KEY:-}" ]; then
   export ANTHROPIC_API_KEY
   log "auth: ANTHROPIC_API_KEY"
 else
-  fail "geen auth: mount claude-credentials of zet ANTHROPIC_API_KEY"
+  fail "geen auth: zet CLAUDE_CODE_OAUTH_TOKEN, mount claude-credentials, of zet ANTHROPIC_API_KEY"
 fi
 
 # 2. Repo-URL (accepteer 'owner/repo', een volledige URL, of een lokaal pad)
