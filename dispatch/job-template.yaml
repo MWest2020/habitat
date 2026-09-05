@@ -44,6 +44,15 @@ spec:
             - name: GIT_PAT
               valueFrom:
                 secretKeyRef: { name: ${PAT_SECRET}, key: GIT_PAT }
+            # Langlevende subscription-auth (`claude setup-token`, 1 jaar).
+            # optional: de Job start ook zonder dit Secret — dan valt de
+            # entrypoint terug op de gemounte sessie-credentials.
+            - name: CLAUDE_CODE_OAUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: claude-oauth-token
+                  key: token
+                  optional: true
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: ["ALL"] }
@@ -57,5 +66,8 @@ spec:
         - name: claude-creds
           secret:
             secretName: claude-credentials
+            # optional: met CLAUDE_CODE_OAUTH_TOKEN is dit Secret overbodig;
+            # zonder deze regel zou het verwijderen ervan elke Job blokkeren.
+            optional: true
             items:
               - { key: credentials.json, path: credentials.json }
