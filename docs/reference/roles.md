@@ -41,7 +41,7 @@ roldefinities leven als `.claude/agents/<rol>.md` in de dóelrepo, skills als
 - Allow: bovenstaande leestools plus `Edit`, `Write`, git-werkcommando's
   (`add`, `commit`, `rm`, `mv`, `checkout`, `branch`), test-/buildrunners
   (`uv run`, `uvx`, `npm test|run|ci`, `npx`, `go test|build|vet`, `make`,
-  `pytest`, `shellcheck`) en `mkdir`, `ls`, `chmod`.
+  `pytest`, `shellcheck`), `openspec validate` en `mkdir`, `ls`, `chmod`.
 - Deny: `git push` (pushen doet de entrypoint), netwerk (`curl`, `wget`,
   `ssh`, `scp`, `nc`), infra (`kubectl`, `docker`), dezelfde secrets-paden.
 
@@ -108,3 +108,17 @@ De research adviseert `claude --bare`, maar dat slaat de subscription-login
 over ("Not logged in", lokaal bewezen 2026-07-29) en habitat is sub-first.
 Determinisme komt van `dontAsk` plus expliciete settings plus het gepinde
 worker-image (`worker/entrypoint.sh`, stap 1a).
+
+## OpenSpec-CLI in de image
+
+De image bevat `@fission-ai/openspec` (gepind; let op: het kale `openspec` op npm
+is een lege placeholder). Builder, reviewer en security mogen precies één
+subcommando draaien: `openspec validate *`. Muterende subcommando's — met name
+`openspec archive`, dat mappen verplaatst — blijven geweigerd door de
+deny-by-default-laag; archiveren is een besluit, geen bouwstap. De architect heeft
+de regel niet: die plant en heeft geen artefact om te valideren.
+
+Zonder deze twee dingen samen (CLI **en** allowlist-regel) kan een rol de
+validatie-taak van een change niet uitvoeren en verschuift het bewijs naar een mens
+— waargenomen op een builder-run die daarop terugviel op FAIL terwijl het werk af
+was.
