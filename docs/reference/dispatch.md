@@ -31,7 +31,7 @@ deny-by-default via `--permission-mode dontAsk`) en een output-JSON-schema
 | Variabele | Default | Rol |
 |---|---|---|
 | `WORKER_IMAGE` | — (verplicht) | image per commit-SHA, bv. `ghcr.io/mwest2020/habitat-worker:<sha>`; nooit `latest` |
-| `KUBECTL` | `kubectl` | kubectl-binary/-wrapper |
+| `KUBECTL` | `kubectl` | kubectl-binary/-wrapper; mag een remote wrapper zijn (`KUBECTL="ssh <host> kubectl"`) — zie [Remote kubectl](#remote-kubectl) |
 | `HABITAT_BASE_BRANCH` | leeg | basisbranch voor de run |
 | `HABITAT_MAX_BUDGET_USD` | `5.00` | kostendrempel per change |
 | `ACTIVE_DEADLINE_SECONDS` | `1800` | `activeDeadlineSeconds` op de Job |
@@ -128,6 +128,26 @@ image-pull, zodat een trage start niet als "onbekend" eindigt.
 
 De logs worden gestreamd (`kubectl logs -f` zodra de pod draait) en
 gearchiveerd naar `$HABITAT_LOGDIR/<job-naam>.log`.
+
+### Remote kubectl
+
+Draai je vanaf een host zonder cluster-toegang, dan is `KUBECTL` een wrapper:
+
+```
+KUBECTL="ssh -o BatchMode=yes <host> kubectl"
+```
+
+Let op: zo'n wrapper geeft het commando als één string door, waarna de shell op
+de *doelhost* het opnieuw parseert. Argumenten met spaties, haakjes of
+aanhalingstekens overleven dat niet. Daarom leest `dispatch.sh` de
+Job-condities via `-o json` + een lokale `python3`-filter (`job_conditions()`)
+in plaats van een jsonpath met `[?(@.status=="True")]`: die template gaf op de
+doelhost `syntax error near unexpected token '('`, `2>/dev/null` slikte de fout
+op, en **elke** run — ook een geslaagde — eindigde als `GEEN uitkomst` met exit
+2 (waargenomen 2026-09-05 op een reviewer-run die PASS was).
+
+Bouw je hier iets bij, houd kubectl-argumenten dan vrij van spaties en
+aanhalingstekens, of haal `-o json` op en filter lokaal.
 
 ## Runbook: cluster-livetests (add-role-architecture 3.1–3.3)
 
