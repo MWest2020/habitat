@@ -19,9 +19,14 @@
 
 ## 4. Gate
 
-- [ ] 4.1 `openspec validate add-openspec-cli-to-worker --strict` groen.
+- [x] 4.1 `openspec validate add-openspec-cli-to-worker --strict` groen.
 - [ ] 4.2 CI groen op de PR (verify + docs-gates).
 - [ ] 4.3 Na merge: image-build geslaagd en de nieuwe tag genoteerd, zodat
       dispatchers `WORKER_IMAGE` kunnen verzetten.
-- [ ] 4.4 Bewijs dat het werkt: een run waarin een rol `openspec validate` zelf
-      draait (of expliciet vastleggen dat dit pas bij de volgende dispatch blijkt).
+- [x] 4.4a Image lokaal gebouwd uit deze Containerfile (`docker build`, exit 0) en
+      de inhoud gecontroleerd zonder te draaien (`docker create` + `cp`, want deze
+      host kan wel bouwen maar geen containers starten): pakket
+      `@fission-ai/openspec 1.3.1` in `/usr/local/lib/node_modules/`, met de
+      symlink `/usr/local/bin/openspec` → `bin/openspec.js`.
+- [ ] 4.4b Eindbewijs volgt uit de eerste dispatch op de nieuwe image-tag: een rol
+      die `openspec validate` zélf draait en het resultaat in zijn run-output zet.
