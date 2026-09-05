@@ -13,7 +13,8 @@
       "Bash(npm test *)", "Bash(npm run *)", "Bash(npm ci)", "Bash(npx *)",
       "Bash(go test *)", "Bash(go build *)", "Bash(go vet *)",
       "Bash(make *)", "Bash(pytest *)", "Bash(shellcheck *)",
-      "Bash(mkdir *)", "Bash(ls *)", "Bash(chmod *)"
+      "Bash(mkdir *)", "Bash(ls *)", "Bash(chmod *)",
+      "Bash(openspec validate *)"
     ],
     "deny": [
       "Bash(git push)", "Bash(git push *)",

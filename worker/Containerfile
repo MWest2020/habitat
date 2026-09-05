@@ -13,7 +13,13 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 # Claude Code headless (gepinde versie; ≥2.1.220 voor --json-schema/dontAsk/--setting-sources)
-RUN npm install -g @anthropic-ai/claude-code@2.1.220 \
+# + de OpenSpec-CLI: taken van een change eisen `openspec validate --strict`, en
+#   zonder de CLI kan een rol dat niet zelf bewijzen (waargenomen 2026-09-04:
+#   een builder-run die verder klaar was, viel hierop terug op FAIL).
+#   Pakket is `@fission-ai/openspec` — het kale `openspec` op npm is een lege
+#   placeholder (0.0.0). Versie gepind op wat lokaal en in de hub gebruikt wordt,
+#   zodat een run-validatie hetzelfde oordeelt als een validatie op een werkstation.
+RUN npm install -g @anthropic-ai/claude-code@2.1.220 @fission-ai/openspec@1.3.1 \
  && npm cache clean --force
 
 # Habitat-eigen tooling (audit + HTML-rapport + per-rol enforcement)
