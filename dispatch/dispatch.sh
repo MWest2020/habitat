@@ -70,14 +70,32 @@ envsubst "$VARS" < "$HERE/job-template.yaml" | $KUBECTL apply -f -
 # scheduling en een (cold) image-pull; anders zou een trage pull ten onrechte
 # als "onbekend" eindigen. Logs worden best-effort gestreamd zodra de pod draait
 # (logs -f blokkeert dan tot de pod klaar is — natuurlijke wacht + zicht).
+# Job-condities als "Type=Reason ..." (alleen condities met status True).
+# Bewust `-o json` + python3 i.p.v. een jsonpath-filter: die template bevat
+# spaties, haakjes en aanhalingstekens, en met een REMOTE kubectl
+# (KUBECTL="ssh <host> kubectl") herparseert de shell op die host het argument.
+# Dan faalt kubectl met `syntax error near unexpected token '('`, `2>/dev/null`
+# slikt dat op, en elke run — ook een geslaagde — eindigt als "onbekend" met
+# exit 2. Waargenomen 2026-09-05 op een reviewer-run die gewoon PASS was.
+job_conditions() {
+  $KUBECTL -n agents get job "$1" -o json 2>/dev/null | python3 -c '
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+cs = ((d.get("status") or {}).get("conditions")) or []
+print(" ".join("%s=%s" % (c.get("type"), c.get("reason") or "")
+               for c in cs if c.get("status") == "True"))
+' 2>/dev/null || true
+}
+
 WAIT_MAX=$(( ACTIVE_DEADLINE_SECONDS + 600 ))
 conds=""
 logs_streamed=0
 waited=0
 while [ "$waited" -lt "$WAIT_MAX" ]; do
-  conds=$($KUBECTL -n agents get job "$JOB_NAME" \
-           -o jsonpath='{range .status.conditions[?(@.status=="True")]}{.type}={.reason} {end}' \
-           2>/dev/null || true)
+  conds=$(job_conditions "$JOB_NAME")
   [ -n "$conds" ] && break
   if [ "$logs_streamed" -eq 0 ]; then
     phase=$($KUBECTL -n agents get pods -l job-name="$JOB_NAME" \
