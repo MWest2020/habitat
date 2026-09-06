@@ -22,6 +22,19 @@ RUN apt-get update \
 RUN npm install -g @anthropic-ai/claude-code@2.1.220 @fission-ai/openspec@1.3.1 \
  && npm cache clean --force
 
+# Skill-bodies uit skill-forge, gepind op commit (nooit een branch: de image is
+# immutable en een skill-update hoort een zichtbare pin-bump te zijn). De rol krijgt
+# straks alléén de skills die zijn definitie noemt — alle 47 meeladen zou ~4.000
+# tokens per run kosten aan skill-beschrijvingen, terwijl een rol er nul of één heeft.
+ARG SKILLS_REF=44ce9a8d2b3e560e4927ed4e803eccccc9e7fe5f
+RUN mkdir -p /tmp/sf /opt/habitat \
+ && git -C /tmp/sf init -q \
+ && git -C /tmp/sf remote add origin https://github.com/MWest2020/skill-forge.git \
+ && git -C /tmp/sf fetch -q --depth 1 origin "$SKILLS_REF" \
+ && git -C /tmp/sf checkout -q FETCH_HEAD \
+ && mv /tmp/sf/skills /opt/habitat/skills \
+ && rm -rf /tmp/sf
+
 # Habitat-eigen tooling (audit + HTML-rapport + per-rol enforcement)
 COPY report/ /opt/habitat/report/
 COPY worker/settings/ /opt/habitat/settings/
