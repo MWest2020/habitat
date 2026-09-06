@@ -209,8 +209,15 @@ log "verdict=${VERDICT} rol-verdict=${ROLE_VERDICT:-geen} subtype=${SUBTYPE} cos
 # het claude -p-JSON-eindobject waaruit het `result`-veld wordt gehaald.
 git add -A
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+# Artefacten landen BUITEN de working tree (/work/artifacts), zodat ze niet in de
+# commit en dus niet in de doelrepo belanden (besluit Mark 2026-09-06). De operator
+# knipt ze uit het Job-log (--emit-stdout): `kubectl cp` werkt niet met een remote
+# KUBECTL, logs wel.
+ARTIFACTS=/work/artifacts
+mkdir -p "$ARTIFACTS"
 python3 /opt/habitat/report/habitat_report.py \
-  --repo-dir . --role "$HABITAT_ROLE" --change "$HABITAT_CHANGE" \
+  --repo-dir . --artifact-dir "$ARTIFACTS" --emit-stdout \
+  --role "$HABITAT_ROLE" --change "$HABITAT_CHANGE" \
   --run-id "$HABITAT_RUN_ID" --verdict "$VERDICT" --subtype "$SUBTYPE" \
   --cost "$COST" --turns "$TURNS" --exit "$CLAUDE_EXIT" \
   --finished-at "$NOW" --repo "$REPO_URL" --base-ref "$BASE_REF" \
