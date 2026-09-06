@@ -24,7 +24,14 @@ FIELDS = ["prev_hash", "ts", "role", "change", "run_id",
 # de hash valt (`.habitat/evil.py`, `.habitat/run-report-evil.html`, … blijven
 # gehasht) en is de hash tóch reproduceerbaar vanaf de gepushte branch — die die
 # artefacten wél bevat. run-id komt van dispatch, niet van de agent.
-def artifact_excludes(run_id: str) -> list:
+def artifact_excludes(run_id: str, in_repo: bool = True) -> list:
+    # Sinds move-run-artifacts-out-of-git schrijft habitat zijn artefacten buiten de
+    # werkboom. Dan hoort er NIETS uitgesloten te worden: een uitsluiting op een pad
+    # dat habitat niet meer schrijft, is een vrije ongehashte ruimte voor de agent
+    # (die `run-report.json` wél kan aanmaken, gecommit krijgt, en buiten diff_hash
+    # houdt). Alleen in de legacy-modus (artefacten in .habitat/) blijft de lijst.
+    if not in_repo:
+        return []
     return [
         ":(exclude,literal).habitat/audit.jsonl",
         f":(exclude,literal).habitat/run-report-{run_id}.html",
@@ -33,13 +40,13 @@ def artifact_excludes(run_id: str) -> list:
     ]
 
 
-def diff_excludes(run_id: str) -> list:
-    return ["--", ".", *artifact_excludes(run_id)]
+def diff_excludes(run_id: str, in_repo: bool = True) -> list:
+    return ["--", ".", *artifact_excludes(run_id, in_repo)]
 
 
-def diff_hash_scope(run_id: str) -> str:
+def diff_hash_scope(run_id: str, in_repo: bool = True) -> str:
     return ("git diff <base-ref> HEAD -- . "
-            + " ".join(f"'{e}'" for e in artifact_excludes(run_id))
+            + " ".join(f"'{e}'" for e in artifact_excludes(run_id, in_repo))
             + " | sha256sum")
 
 
@@ -52,11 +59,11 @@ def git(repo: str, *args: str) -> str:
     return r.stdout
 
 
-def build_entry(a) -> dict:
+def build_entry(a, hab, in_repo: bool = True) -> dict:
     # diff t.o.v. de basis vóór de agent (vangt óók door de agent gecommitte
     # wijzigingen); val terug op --cached als er geen base-ref is meegegeven.
     # Habitat-artefacten uitgesloten -> reproduceerbaar vanaf de branch.
-    excl = diff_excludes(a.run_id)
+    excl = diff_excludes(a.run_id, in_repo)
     diff = (git(a.repo_dir, "diff", a.base_ref, *excl) if a.base_ref
             else git(a.repo_dir, "diff", "--cached", *excl))
     e = {
@@ -64,7 +71,10 @@ def build_entry(a) -> dict:
         "run_id": a.run_id, "verdict": a.verdict, "subtype": a.subtype,
         "cost": a.cost, "turns": a.turns, "diff_hash": sha256(diff),
     }
-    audit = Path(a.repo_dir) / ".habitat" / "audit.jsonl"
+    # Dezelfde ledger als waar main() naartoe schrijft. Stond dit op de repo-map,
+    # dan las de keten haar voorganger uit een bestand dat de agent zelf beheert —
+    # en dat is precies de garantie die de keten moet geven.
+    audit = hab / "audit.jsonl"
     prev = ""
     if audit.exists():
         lines = [l for l in audit.read_text().splitlines() if l.strip()]
@@ -130,11 +140,18 @@ def main() -> None:
 
     hab = Path(a.artifact_dir) if a.artifact_dir else Path(a.repo_dir) / ".habitat"
     hab.mkdir(parents=True, exist_ok=True)
-    excl = diff_excludes(a.run_id)
+    # Liggen de artefacten binnen de werkboom? Alleen dan hoort de diff-hash ze uit
+    # te sluiten; buiten de repo schrijft habitat er niets meer en zou een
+    # uitsluiting een gat zijn (zie artifact_excludes).
+    try:
+        in_repo = hab.resolve().is_relative_to(Path(a.repo_dir).resolve())
+    except AttributeError:                       # py<3.9
+        in_repo = str(hab.resolve()).startswith(str(Path(a.repo_dir).resolve()))
+    excl = diff_excludes(a.run_id, in_repo)
     stat = (git(a.repo_dir, "diff", a.base_ref, "--stat", *excl) if a.base_ref
             else git(a.repo_dir, "diff", "--cached", "--stat", *excl)).strip()
 
-    entry = build_entry(a)
+    entry = build_entry(a, hab, in_repo)
     with (hab / "audit.jsonl").open("a") as fh:
         fh.write(json.dumps(entry) + "\n")
 
@@ -149,7 +166,7 @@ def main() -> None:
         # gegenereerde artefacten van deze run (audit.jsonl, run-report-<id>.html,
         # run-output-<id>.md, dit bestand) die buiten de diff_hash vallen; overige
         # .habitat/-writes van de agent vallen er WÉL binnen.
-        "diff_hash_scope": diff_hash_scope(a.run_id),
+        "diff_hash_scope": diff_hash_scope(a.run_id, in_repo),
     }, indent=2) + "\n")
 
     # Fail-closed: een door de agent beschadigde regel mag het rapport niet laten
