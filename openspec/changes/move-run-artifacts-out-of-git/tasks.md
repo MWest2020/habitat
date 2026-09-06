@@ -14,11 +14,11 @@
 ## 3. Spec + docs
 
 - [x] 3.1 Spec-delta `run-report`: niet in de branch, lokaal bij de operator, 14 dagen.
-- [ ] 3.2 `docs/reference/dispatch.md`: bewaarplek, retentie en de log-route.
+- [x] 3.2 `docs/reference/dispatch.md`: bewaarplek, retentie en de log-route.
 
 ## 4. Gate
 
-- [ ] 4.1 `openspec validate move-run-artifacts-out-of-git --strict` groen.
+- [x] 4.1 `openspec validate move-run-artifacts-out-of-git --strict` groen.
 - [ ] 4.2 CI groen (verify + docs-gates).
 - [ ] 4.3 Na merge: image gebouwd, nieuwe tag genoteerd.
 - [ ] 4.4 Opruimen in de doelrepo's (handbook 4, wordsworth 4, boomhuis 4) + `.gitignore`.
