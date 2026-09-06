@@ -88,6 +88,37 @@ git checkout -b "$BRANCH"
 BASE_REF=$(git rev-parse HEAD)   # basis vóór de agent; diff_hash meet hiertegen
 export HABITAT_BASE_REF="$BASE_REF"   # stop-verify draait verify.sh uit deze commit
 
+# 3b. Model + skills uit het rolbestand van de DOELREPO (.claude/agents/<rol>.md,
+# front-matter). De handbook is de bron; de seed draagt de velden mee, dus de
+# worker hoeft de registry niet op te halen.
+ROLE_FILE=".claude/agents/${HABITAT_ROLE}.md"
+ROLE_MODEL=""
+if [ -f "$ROLE_FILE" ]; then
+  ROLE_MODEL=$(sed -n 's/^model:[[:space:]]*\([a-z0-9-]*\).*/\1/p' "$ROLE_FILE" | head -1)
+  [ -n "$ROLE_MODEL" ] && log "model uit rolbestand: ${ROLE_MODEL}"
+fi
+
+# Skills: alleen wat de rol NOEMT wordt gematerialiseerd. Alle 47 uit de image
+# aanbieden zou ~4.000 tokens per run kosten aan beschrijvingen; een rol heeft er
+# nul of één. Namen worden gefilterd op slug-vorm (geen pad, geen traversal) en
+# moeten in de image bestaan — een onbekende skill is een melding, geen stille pass.
+if [ -f "$ROLE_FILE" ] && [ -d /opt/habitat/skills ]; then
+  mkdir -p "$HOME/.claude/skills"
+  for skill in $(sed -n 's/^skills:[[:space:]]*\[\(.*\)\].*/\1/p' "$ROLE_FILE" \
+                 | head -1 | tr ',' ' '); do
+    case "$skill" in
+      "") continue ;;
+      *[!a-z0-9-]*) log "skill-naam geweigerd (geen slug): ${skill}"; continue ;;
+    esac
+    if [ -d "/opt/habitat/skills/$skill" ]; then
+      cp -r "/opt/habitat/skills/$skill" "$HOME/.claude/skills/"
+      log "skill geladen: ${skill}"
+    else
+      log "skill ONBEKEND in deze image (niet geladen): ${skill}"
+    fi
+  done
+fi
+
 # Optioneel: taak/context uit de DÓELREPO (amend-worker-task-ref). Dit is git,
 # geen nieuw invoerkanaal — de boomhuis-brug schrijft het bestand in de repo en
 # geeft alleen het pad mee. Pad-begrenzing binnen de repo; fail-closed bij
@@ -127,6 +158,7 @@ set +e
 #   entrypoint); zo kan repo-gecontroleerde code (Makefile/npm-script) niet
 #   geauthenticeerd pushen buiten de permissielaag om.
 env -u GIT_PAT claude -p "$PROMPT" \
+  ${ROLE_MODEL:+--model "$ROLE_MODEL"} \
   --output-format json \
   --json-schema "$(cat "$ROLE_SCHEMA")" \
   --settings "$ROLE_SETTINGS" \

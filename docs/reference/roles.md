@@ -122,3 +122,22 @@ Zonder deze twee dingen samen (CLI **en** allowlist-regel) kan een rol de
 validatie-taak van een change niet uitvoeren en verschuift het bewijs naar een mens
 — waargenomen op een builder-run die daarop terugviel op FAIL terwijl het werk af
 was.
+
+## Skills: gepind in de image, per rol gematerialiseerd
+
+De image draagt de skill-bodies uit skill-forge, gepind op een commit
+(`ARG SKILLS_REF` in de Containerfile) — nooit een branch, zodat een skill-update
+een zichtbare pin-bump is en draaiende runs niet verschuiven.
+
+Bij een run leest de entrypoint het rolbestand van de doelrepo
+(`.claude/agents/<rol>.md`) en kopieert **alleen** de skills uit zijn
+`skills:`-regel naar `~/.claude/skills/`. Alle skills aanbieden zou ≈ 4.000 tokens
+per run kosten aan beschrijvingen (44 in het register, gemiddeld 91 per skill),
+terwijl een rol er nul of één noemt.
+
+Namen moeten een slug zijn (`a-z0-9-`); iets als `../../etc` wordt geweigerd met
+een melding. Een skill die niet in de image zit wordt gemeld en overgeslagen — een
+ontbrekende skill laat bouwwerk niet mislukken.
+
+Uit hetzelfde rolbestand komt `model:`, dat als `--model` aan de agent-run wordt
+meegegeven. Ontbreekt het veld, dan draait de run zoals voorheen.
