@@ -95,7 +95,7 @@ def agent_result(output_file: str) -> str:
     return r if isinstance(r, str) else ""
 
 
-def write_run_output(a, hab: Path) -> None:
+def write_run_output(a, out: Path) -> None:
     """Bewaar de agent-eind-uitvoer als markdown-artefact. ALTIJD schrijven — óók
     zonder leesbaar `result` (dan een placeholder) — zodat habitat dit bestand
     deterministisch bezit en een agent geen eigen `.habitat/run-output-<id>.md` kan
@@ -106,7 +106,7 @@ def write_run_output(a, hab: Path) -> None:
     md = (f"# Habitat {a.role} — {a.change}\n\n"
           f"_run_id {a.run_id} · verdict {a.verdict} · {a.finished_at}_\n\n---\n\n"
           f"{body}\n")
-    (hab / f"run-output-{a.run_id}.md").write_text(md)
+    (out / f"run-output-{a.run_id}.md").write_text(md)
 
 
 def main() -> None:
@@ -115,14 +115,21 @@ def main() -> None:
               "finished-at", "cost", "turns", "exit"):
         p.add_argument("--" + f, default="")
     p.add_argument("--repo-dir", default=".")
+    # Artefacten horen NIET in de doelrepo (Mark, 2026-09-06): standaard blijft de
+    # oude plek voor compat, de worker geeft een pad buiten de working tree mee.
+    p.add_argument("--artifact-dir", default="")
+    # Print de artefacten naar stdout tussen markers, zodat de operator ze uit het
+    # gearchiveerde Job-log kan halen: `kubectl cp` werkt niet met een remote
+    # KUBECTL, logs wel.
+    p.add_argument("--emit-stdout", action="store_true")
     p.add_argument("--base-ref", default="")
     p.add_argument("--output-file", default="")
     a = p.parse_args()
     a.run_id = a.run_id or ""
     a.finished_at = a.finished_at or ""
 
-    hab = Path(a.repo_dir) / ".habitat"
-    hab.mkdir(exist_ok=True)
+    hab = Path(a.artifact_dir) if a.artifact_dir else Path(a.repo_dir) / ".habitat"
+    hab.mkdir(parents=True, exist_ok=True)
     excl = diff_excludes(a.run_id)
     stat = (git(a.repo_dir, "diff", a.base_ref, "--stat", *excl) if a.base_ref
             else git(a.repo_dir, "diff", "--cached", "--stat", *excl)).strip()
@@ -132,7 +139,7 @@ def main() -> None:
         fh.write(json.dumps(entry) + "\n")
 
     # run-report.json (compat met eerdere entrypoint-output)
-    (Path(a.repo_dir) / "run-report.json").write_text(json.dumps({
+    (hab / "run-report.json").write_text(json.dumps({
         "role": a.role, "change": a.change, "run_id": a.run_id, "repo": a.repo,
         "verdict": a.verdict, "subtype": a.subtype,
         "total_cost_usd": a.cost, "num_turns": a.turns,
@@ -167,8 +174,30 @@ def main() -> None:
 
     # Agent-eind-uitvoer als markdown — altijd, ná de hash (zie write_run_output).
     write_run_output(a, hab)
-    print(f"[report] .habitat/audit.jsonl (+1) + run-report-{a.run_id}.html "
+    print(f"[report] {hab}/audit.jsonl (+1) + run-report-{a.run_id}.html "
           f"+ run-output-{a.run_id}.md")
+    if a.emit_stdout:
+        emit(hab, a.run_id)
+
+
+# Markers waarmee de operator de artefacten uit het Job-log knipt. Base64 zodat
+# newlines, HTML en quotes de logstroom niet kunnen breken en niets in het log
+# per ongeluk als een marker wordt gelezen.
+EMIT_BEGIN = "===habitat-artifact-begin==="
+EMIT_END = "===habitat-artifact-end==="
+
+
+def emit(hab: Path, run_id: str) -> None:
+    """Print elk artefact als één regel `<naam> <base64>` tussen de markers."""
+    import base64
+    names = ["audit.jsonl", "run-report.json",
+             f"run-report-{run_id}.html", f"run-output-{run_id}.md"]
+    print(EMIT_BEGIN)
+    for n in names:
+        f = hab / n
+        if f.is_file():
+            print(n, base64.b64encode(f.read_bytes()).decode())
+    print(EMIT_END)
 
 
 def render(e: dict, stat: str, chain: list) -> str:

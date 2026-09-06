@@ -117,6 +117,34 @@ mkdir -p "$LOGDIR"
 $KUBECTL -n agents logs "job/$JOB_NAME" > "$LOGDIR/$JOB_NAME.log" 2>/dev/null || true
 echo "[dispatch] log: $LOGDIR/$JOB_NAME.log"
 
+# Artefacten uit het log knippen. De Job schrijft ze niet meer naar de doelrepo
+# (besluit Mark 2026-09-06: niet in git), en `kubectl cp` werkt niet met een remote
+# KUBECTL — het log wel. Bewaarplek is lokaal, retentie 14 dagen.
+STORE="$LOGDIR/artifacts/${repo_short}/${RUN_ID}"
+python3 - "$LOGDIR/$JOB_NAME.log" "$STORE" <<'PYEOF' || true
+import base64, pathlib, sys
+log, dest = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+BEGIN, END = "===habitat-artifact-begin===", "===habitat-artifact-end==="
+lines = log.read_text(errors="replace").splitlines() if log.is_file() else []
+try:
+    i, j = lines.index(BEGIN), lines.index(END)
+except ValueError:
+    sys.exit(0)                      # oudere worker-image: geen markers, geen drama
+dest.mkdir(parents=True, exist_ok=True)
+n = 0
+for line in lines[i + 1:j]:
+    name, _, b64 = line.partition(" ")
+    if not b64 or "/" in name:       # naam is altijd een bare bestandsnaam
+        continue
+    (dest / name).write_bytes(base64.b64decode(b64))
+    n += 1
+print(f"[dispatch] {n} artefact(en) -> {dest}")
+PYEOF
+
+# Retentie: 14 dagen op de run-artefacten en de logs (besluit Mark 2026-09-06).
+find "$LOGDIR/artifacts" -mindepth 2 -maxdepth 2 -type d -mtime +14 -exec rm -rf {} + 2>/dev/null || true
+find "$LOGDIR" -maxdepth 1 -name "*.log" -mtime +14 -delete 2>/dev/null || true
+
 echo "[dispatch] condities: ${conds:-onbekend}"
 
 if echo "$conds" | grep -qi 'Failed'; then

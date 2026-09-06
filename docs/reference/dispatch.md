@@ -129,6 +129,26 @@ image-pull, zodat een trage start niet als "onbekend" eindigt.
 De logs worden gestreamd (`kubectl logs -f` zodra de pod draait) en
 gearchiveerd naar `$HABITAT_LOGDIR/<job-naam>.log`.
 
+### Run-artefacten: lokaal, niet in git
+
+De Job schrijft `run-report-<id>.html`, `run-output-<id>.md`, `run-report.json`
+en `audit.jsonl` naar `/work/artifacts` — **buiten** de working tree. De gepushte
+branch bevat dus alleen de wijziging van de agent.
+
+De artefacten bereiken de operator via het Job-log: de worker print ze als
+`<naam> <base64>` tussen `===habitat-artifact-begin===` en
+`===habitat-artifact-end===`, en `dispatch.sh` knipt ze eruit naar
+`$HABITAT_LOGDIR/artifacts/<repo>/<run_id>/`. Via het log en niet met
+`kubectl cp`, omdat de pod na de Job-TTL weg is en `cp` breekt met een remote
+`KUBECTL` (zie [Remote kubectl](#remote-kubectl)).
+
+**Retentie: 14 dagen.** `dispatch.sh` ruimt bij elke run artefactmappen en
+`*.log` op die ouder zijn. Wil je iets bewaren, haal het dan binnen die termijn
+weg — er is geen tweede kopie, en in git komt het niet.
+
+Een oudere worker-image zonder markers levert geen artefacten op; dispatch merkt
+dat en gaat door zonder fout.
+
 ### Remote kubectl
 
 Draai je vanaf een host zonder cluster-toegang, dan is `KUBECTL` een wrapper:
