@@ -27,6 +27,37 @@ b='(^|[^A-Za-z0-9_])'   # start of niet-woordteken (spatie, /, :, =, quote, --)
 # payload staat niet in de diff en niet op de gepushte branch.
 secret_re="${b}\.env(\$|[^A-Za-z0-9])|/secrets/|\.pem(\$|[^A-Za-z0-9])|${b}id_rsa|\.credentials\.json(\$|[^A-Za-z0-9])|${b}\.claude/|/var/run/claude/|${b}proc/|${b}sys/|${b}\.git/"
 
+# Dezelfde lijst zónder de `.env`-clausule. Nodig omdat één uitzondering op
+# `.env` (zie hieronder) niet ook `/secrets/.env.example` mag vrijgeven: de
+# carve-out moet precies één clausule overslaan, niet de hele regex.
+secret_re_no_env="/secrets/|\.pem(\$|[^A-Za-z0-9])|${b}id_rsa|\.credentials\.json(\$|[^A-Za-z0-9])|${b}\.claude/|/var/run/claude/|${b}proc/|${b}sys/|${b}\.git/"
+
+# `.env.example` en soortgenoten zijn gecommitte sjablonen ZONDER geheimen —
+# elke repo heeft er een, en een builder moet ze in de pas kunnen houden met
+# de configuratie die ze documenteren. De oude regel ving ze wel: gemeten op
+# een builder-run (2026-09-08, change document-demo-env) die daarop terugviel
+# op FAIL terwijl de taak volkomen legitiem was.
+#
+# Alleen exacte basenames, verankerd op het einde: `.env.example.local` of
+# `.env.example/../.env` matcht niet. De uitzondering geldt UITSLUITEND voor
+# de padtools (Read/Edit/Write), niet voor Bash — een Bash-commando is vrije
+# tekst waarin een sjabloonnaam een echte read kan meesmokkelen
+# (`cat .env.example .env`), en een builder bewerkt een sjabloon met Edit,
+# niet met cat.
+env_template_re='(^|/)\.env\.(example|sample|template|dist|defaults)$'
+
+# Weiger `fp` als het een verboden pad is, met de sjabloon-uitzondering.
+deny_path_unless_env_template() {
+  fp_=$1
+  if printf '%s' "$fp_" | grep -Eq "$secret_re_no_env"; then
+    deny "secrets-/credential-pad geblokkeerd"
+  fi
+  if printf '%s' "$fp_" | grep -Eq "${b}\.env(\$|[^A-Za-z0-9])"; then
+    printf '%s' "$fp_" | grep -Eq "$env_template_re" \
+      || deny "secrets-/credential-pad geblokkeerd"
+  fi
+}
+
 case "$tool" in
   Bash)
     cmd=$(jq -r '.tool_input.command // ""' <<<"$payload") || deny "guard: command niet te parsen"
@@ -62,16 +93,15 @@ case "$tool" in
       done
       exit 0
     fi
-    if printf '%s' "$fp" | grep -Eq "$secret_re"; then
-      deny "secrets-/credential-pad geblokkeerd"
-    fi
+    deny_path_unless_env_template "$fp"
     ;;
   Edit|Write|NotebookEdit)
     fp=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // ""' <<<"$payload")
-    # Geen uitzondering voor schrijven: .claude/ blijft volledig dicht.
-    if printf '%s' "$fp" | grep -Eq "$secret_re"; then
-      deny "secrets-/credential-pad geblokkeerd"
-    fi
+    # Newline in een pad: zelfde reden als bij Read — grep is regel-georienteerd.
+    case "$fp" in *$'\n'*) deny "ongeldig pad (newline)" ;; esac
+    # Geen uitzondering voor schrijven op .claude/ — dat blijft volledig dicht;
+    # de enige carve-out is het env-sjabloon, zie deny_path_unless_env_template.
+    deny_path_unless_env_template "$fp"
     ;;
 esac
 exit 0
