@@ -4,7 +4,7 @@
   "additionalProperties": false,
   "properties": {
     "verdict": { "enum": ["PASS", "FAIL"] },
-    "summary": { "type": "string" },
+    "summary": { "type": "string", "minLength": 200 },
     "findings": {
       "type": "array",
       "items": {

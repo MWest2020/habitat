@@ -1,6 +1,6 @@
 ---
 status: draft
-last_reviewed: 2026-07-29
+last_reviewed: 2026-09-07
 ---
 
 # Rollen-referentie
@@ -31,10 +31,21 @@ roldefinities leven als `.claude/agents/<rol>.md` in de dóelrepo, skills als
 
 - Allow: `Read`, `Grep`, `Glob`, `Bash(git diff|log|status|show …)`.
 - Deny: `Edit`, `Write`, `NotebookEdit`, `WebFetch`, `WebSearch`, `git push`,
-  secrets-/credential-paden (`.env`, `**/secrets/**`, `*.pem`, `id_rsa*`,
-  `.credentials.json`).
+  secrets-/credential-paden (`.env` en de ingevulde varianten, zie hieronder;
+  `**/secrets/**`, `*.pem`, `id_rsa*`, `.credentials.json`).
 - Architect extra: repo-wijzigingen draait de entrypoint terug en de run
   faalt (`worker/entrypoint.sh`, stap 4c).
+
+**Welke env-bestanden geblokkeerd zijn** (2026-09-07, change
+`harden-role-output-and-env-deny`): `.env` zelf, plus de conventioneel
+ingevulde varianten — `.env.local`, `.env.*.local`, `.env.development`,
+`.env.dev`, `.env.production`, `.env.prod`, `.env.staging`, `.env.test`,
+`.env.secret`, `.env.secrets`. **Niet** geblokkeerd: `.env.example` en
+soortgenoten. Dat zijn gecommitte sjablonen zonder geheimen die een builder
+moet kunnen bijwerken; het eerdere `Read(**/.env.*)` ving die ook, wat een
+builder een taak kostte zonder iets te beschermen — de worker kloont vers
+van GitHub, dus alles wat op `.env*` matcht staat al in de repo die de rol
+sowieso mag lezen.
 
 **builder**:
 
@@ -54,6 +65,15 @@ script komt uit de basiscommit, dus de builder kan de gate niet ontwapenen.
 
 Elk schema eist minimaal `verdict` (`PASS`/`FAIL`) en `summary`;
 `additionalProperties: false`.
+
+`summary` heeft een ondergrens van **200 tekens** (2026-09-07, change
+`harden-role-output-and-env-deny`). Aanleiding: een reviewer-run leverde na
+55 beurten `{"verdict":"PASS","summary":"test","findings":[]}` — schema-geldig,
+dus de gate liet hem door en de keten liep verder terwijl er geen review in
+zat. Een lege samenvatting is erger dan een FAIL: het leest als dekking die
+er nooit was. De ondergrens maakt vullen niet onmogelijk, maar haalt de
+goedkoopste variant weg. Of een review inhoudelijk deugt blijft mensenwerk:
+lees `run-output-<run-id>.md` op de branch vóór je een verdict vertrouwt.
 
 | Rol | Verplicht daarnaast | Inhoud |
 |---|---|---|
