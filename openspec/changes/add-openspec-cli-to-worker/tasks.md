@@ -20,7 +20,7 @@
 ## 4. Gate
 
 - [x] 4.1 `openspec validate add-openspec-cli-to-worker --strict` groen.
-- [ ] 4.2 CI groen op de PR (verify + docs-gates).
+- [x] 4.2 CI groen op de PR (verify + docs-gates) — PR #20, run `success`.
 - [ ] 4.3 Na merge: image-build geslaagd en de nieuwe tag genoteerd, zodat
       dispatchers `WORKER_IMAGE` kunnen verzetten.
 - [x] 4.4a Image lokaal gebouwd uit deze Containerfile (`docker build`, exit 0) en

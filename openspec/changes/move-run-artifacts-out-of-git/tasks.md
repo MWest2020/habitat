@@ -19,6 +19,9 @@
 ## 4. Gate
 
 - [x] 4.1 `openspec validate move-run-artifacts-out-of-git --strict` groen.
-- [ ] 4.2 CI groen (verify + docs-gates).
+- [x] 4.2 CI groen (verify + docs-gates) — PR #21, run `success`.
 - [ ] 4.3 Na merge: image gebouwd, nieuwe tag genoteerd.
-- [ ] 4.4 Opruimen in de doelrepo's (handbook 4, wordsworth 4, boomhuis 4) + `.gitignore`.
+- [x] 4.4 Opruimen in de doelrepo's + `.gitignore`. Nagemeten op `origin/main`:
+      handbook, wordsworth en boomhuis hebben **nul** bestanden onder
+      `.habitat/` of `run-report.json`, en alle drie negeren ze in
+      `.gitignore` (handbook#13, wordsworth#37, boomhuis#19).
