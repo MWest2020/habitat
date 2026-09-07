@@ -20,7 +20,11 @@
 
 - [x] 4.1 `openspec validate move-run-artifacts-out-of-git --strict` groen.
 - [x] 4.2 CI groen (verify + docs-gates) — PR #21, run `success`.
-- [ ] 4.3 Na merge: image gebouwd, nieuwe tag genoteerd.
+- [x] 4.3 Image gebouwd, tag `ghcr.io/mwest2020/habitat-worker:2155dda562b452f6a246809dc9aa828ae3f795df`.
+      **In productie bewezen** op de eerste run met die tag: de artefacten kwamen
+      via het Job-log naar `run-logs/artifacts/habitat-/20260907-191821-20137`
+      (4 stuks), en de run meldde `commit: niets gewijzigd` — er ging dus niets
+      onder `.habitat/` mee de branch in. Precies wat deze change beoogde.
 - [x] 4.4 Opruimen in de doelrepo's + `.gitignore`. Nagemeten op `origin/main`:
       handbook, wordsworth en boomhuis hebben **nul** bestanden onder
       `.habitat/` of `run-report.json`, en alle drie negeren ze in
