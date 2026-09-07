@@ -20,7 +20,12 @@ tool=$(jq -r '.tool_name // ""' <<<"$payload") || deny "guard: payload niet te p
 # alleen start/slash, zodat een pad ook midden in een Bash-commando wordt gevangen
 # (bv. 'cat .env', 'git show HEAD:.env', 'grep x /proc/self/environ').
 b='(^|[^A-Za-z0-9_])'   # start of niet-woordteken (spatie, /, :, =, quote, --)
-secret_re="${b}\.env(\$|[^A-Za-z0-9])|/secrets/|\.pem(\$|[^A-Za-z0-9])|${b}id_rsa|\.credentials\.json(\$|[^A-Za-z0-9])|${b}\.claude/|/var/run/claude/|${b}proc/|${b}sys/"
+# `.git/` staat erbij omdat het GEEN gewone map is maar een uitvoeringskanaal: een
+# agent die .git/hooks/pre-commit of .git/config (core.fsmonitor, filter.*.clean)
+# schrijft, laat zijn code draaien tijdens de `git add`/`git commit` van de
+# entrypoint — buiten de permissielaag, in het proces waar GIT_PAT stond, en de
+# payload staat niet in de diff en niet op de gepushte branch.
+secret_re="${b}\.env(\$|[^A-Za-z0-9])|/secrets/|\.pem(\$|[^A-Za-z0-9])|${b}id_rsa|\.credentials\.json(\$|[^A-Za-z0-9])|${b}\.claude/|/var/run/claude/|${b}proc/|${b}sys/|${b}\.git/"
 
 case "$tool" in
   Bash)
