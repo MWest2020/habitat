@@ -141,3 +141,20 @@ ontbrekende skill laat bouwwerk niet mislukken.
 
 Uit hetzelfde rolbestand komt `model:`, dat als `--model` aan de agent-run wordt
 meegegeven. Ontbreekt het veld, dan draait de run zoals voorheen.
+
+## Wat de allowlist wél en niet is
+
+De builder mag testrunners draaien (`make`, `npm test|run`, `uv run`, `pytest`,
+`go test`). Die voeren **code uit de doelrepo** uit — een `Makefile`-target, een
+`package.json`-script, een `conftest.py`. Dat is inherent aan bouwen en testen: je
+kunt geen tests draaien zonder repo-code te draaien.
+
+De allowlist is dus **geen sandbox**. Hij houdt tegen wat een agent per ongeluk of
+achteloos doet (`curl`, `kubectl`, `cat .env`), niet wat een vastberaden agent via
+zijn eigen testcode doet. De echte grenzen liggen een laag lager: de container, de
+egress-allowlist, geen `GIT_PAT` in het agentproces, en `git` die geen repo-hooks
+draait (`core.hooksPath=/dev/null`).
+
+Wat er bewust **niet** in staat: `uvx` en `npx`. Die halen een willekeurig pakket
+van internet en voeren het uit — een andere klasse dan "draai de tests van deze
+repo", en npm/PyPI staan in de egress-allowlist.

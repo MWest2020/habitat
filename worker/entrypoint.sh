@@ -63,6 +63,11 @@ esac
 # 3. Git-auth zonder PAT-lek: credential-helper leest uit env, niet uit URL/reflog
 git config --global credential.helper \
   '!f() { echo username=x-access-token; echo "password=${GIT_PAT}"; }; f'
+# Repo-gestuurde uitvoering via git uitzetten: hooks en fsmonitor draaien anders
+# ONZE git-aanroepen (add/commit/push) als de agent .git/ heeft weten te schrijven.
+# Tweede laag naast de guard — die dekt de tool-weg, dit dekt git zelf.
+git config --global core.hooksPath /dev/null
+git config --global core.fsmonitor false
 git config --global user.email "habitat-worker@invalid.local"
 git config --global user.name  "Habitat ${HABITAT_ROLE}"
 
