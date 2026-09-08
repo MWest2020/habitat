@@ -36,8 +36,14 @@ roldefinities leven als `.claude/agents/<rol>.md` in de dóelrepo, skills als
 - Architect extra: repo-wijzigingen draait de entrypoint terug en de run
   faalt (`worker/entrypoint.sh`, stap 4c).
 
-**Welke env-bestanden geblokkeerd zijn** (2026-09-07, change
-`harden-role-output-and-env-deny`): `.env` zelf, plus de conventioneel
+**Welke env-bestanden geblokkeerd zijn** (2026-09-07/08, change
+`harden-role-output-and-env-deny`). Let op: dit geldt in twee lagen — de
+settings-deny én de PreToolUse-guard. De guard heeft een eigen `.env`-regel
+en is dus apart aangepast; alleen de settings versmallen was niet genoeg,
+zoals een builder-run op 2026-09-08 aantoonde. De guard-uitzondering geldt
+uitsluitend voor de padtools (Read/Edit/Write), niet voor Bash: een
+Bash-commando is vrije tekst waarin een sjabloonnaam een echte read kan
+meesmokkelen (`cat .env.example .env`). Geblokkeerd zijn: `.env` zelf, plus de conventioneel
 ingevulde varianten — `.env.local`, `.env.*.local`, `.env.development`,
 `.env.dev`, `.env.production`, `.env.prod`, `.env.staging`, `.env.test`,
 `.env.secret`, `.env.secrets`. **Niet** geblokkeerd: `.env.example` en

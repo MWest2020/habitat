@@ -47,6 +47,32 @@ check deny  "Read /proc/self/environ"                     "$(rd '/proc/self/envi
 check deny  "Read /sys/…"                                 "$(rd '/sys/kernel/x')"
 check deny  "Read /secrets/x"                             "$(rd '/work/repo/secrets/token')"
 
+# --- env-sjablonen: gecommitte voorbeelden zonder geheimen mogen wél ---
+# (change harden-role-output-and-env-deny + de guard-vervolgfix van 2026-09-08:
+# de oude `.env`-regel ving ook .env.example, wat een builder een legitieme
+# taak kostte.)
+check allow "Read deploy/.env.example"                    "$(rd '/work/repo/deploy/.env.example')"
+check allow "Write deploy/.env.example"                   "$(wr '/work/repo/deploy/.env.example')"
+check allow "Edit .env.example (relatief)"                '{"tool_name":"Edit","tool_input":{"file_path":".env.example"}}'
+check allow "Read .env.sample"                            "$(rd '.env.sample')"
+check allow "Read .env.template"                          "$(rd '.env.template')"
+check allow "Read .env.dist"                              "$(rd '.env.dist')"
+
+# --- maar alleen die exacte namen, en alleen die ene clausule ---
+check deny  "Read .env.local"                             "$(rd '.env.local')"
+check deny  "Read .env.production"                        "$(rd '/work/repo/.env.production')"
+check deny  "Read .env.example.local (geen sjabloon)"     "$(rd '.env.example.local')"
+check deny  "Read /secrets/.env.example"                  "$(rd '/work/repo/secrets/.env.example')"
+check deny  "Read .claude/.env.example"                   "$(rd '/work/repo/.claude/.env.example')"
+check deny  "Write .claude/.env.example"                  "$(wr '/work/repo/.claude/.env.example')"
+
+# --- Bash blijft strikt: een sjabloonnaam mag geen echte read meesmokkelen ---
+check deny  "Bash cat .env.example .env"                  "$(bash_cmd 'cat .env.example .env')"
+check deny  "Bash grep in .env.example"                   "$(bash_cmd 'grep x .env.example')"
+
+# --- newline-pad ook op de schrijftools (Edit/Write), niet alleen Read ---
+check deny  "Write pad met newline"                       "$(wr '.env.example\n/work/repo/.env')"
+
 # --- schrijven naar secret-paden dicht (Edit/NotebookEdit, niet alleen Write) ---
 check deny  "Edit .env"                                    '{"tool_name":"Edit","tool_input":{"file_path":"/work/repo/.env"}}'
 check deny  "NotebookEdit .claude/x.ipynb"               '{"tool_name":"NotebookEdit","tool_input":{"notebook_path":"/work/repo/.claude/x.ipynb"}}'
