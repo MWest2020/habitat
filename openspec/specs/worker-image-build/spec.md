@@ -6,14 +6,22 @@ TBD - created by archiving change add-worker-image. Update Purpose after archive
 ### Requirement: Reproduceerbare, gepinde Containerfile
 
 De worker-image SHALL gebouwd worden uit een Containerfile met gepinde versies voor
-de base-image en voor `git`, `uv` en Claude Code, zodat een build reproduceerbaar
-is. De Containerfile SHALL nooit een `latest`-tag of ongepinde installatie gebruiken.
+de base-image en voor `git`, `uv`, Claude Code en de OpenSpec-CLI, zodat een build
+reproduceerbaar is. De Containerfile SHALL nooit een `latest`-tag of ongepinde
+installatie gebruiken.
 
 #### Scenario: Build uit gepinde bronnen
 
 - **WHEN** de image gebouwd wordt
 - **THEN** verwijst elke tool-installatie naar een expliciete versie
 - **AND** komt de tag `latest` nergens in de Containerfile voor
+
+#### Scenario: Een rol kan zijn eigen change valideren
+
+- **WHEN** een rol tijdens een run `openspec validate` op de change draait
+- **THEN** is de CLI aanwezig in de image en staat de rol-allowlist precies dat
+  subcommando toe, zodat het bewijs uit de run zelf komt in plaats van uit een
+  latere handmatige controle
 
 ### Requirement: Publicatie naar GHCR per commit-SHA
 
@@ -70,4 +78,18 @@ oudere doelrepo blijft werken.
 
 - **WHEN** het rolbestand `model: sonnet` declareert
 - **THEN** draait de agent-run op dat model, zichtbaar in het runlog
+
+### Requirement: Toegestane testrunners zitten in de image
+
+Elk commando dat een rol-allowlist toestaat als test- of buildrunner SHALL in de
+worker-image aanwezig zijn. Een toegestaan maar ontbrekend commando is erger dan
+een verboden commando: een `verify.sh` die de runner alleen "indien aanwezig"
+aanroept, degradeert dan stil tot een no-op en de run meldt groen voor een
+controle die niet gedraaid heeft.
+
+#### Scenario: shellcheck is aanroepbaar in de kooi
+
+- **WHEN** een builder-run `shellcheck` aanroept op een shellscript in de doelrepo
+- **THEN** draait shellcheck echt en geeft hij zijn bevindingen terug, in plaats
+  van te falen op een ontbrekend commando of overgeslagen te worden
 
