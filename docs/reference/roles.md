@@ -59,6 +59,10 @@ sowieso mag lezen.
   (`add`, `commit`, `rm`, `mv`, `checkout`, `branch`), test-/buildrunners
   (`uv run`, `uvx`, `npm test|run|ci`, `npx`, `go test|build|vet`, `make`,
   `pytest`, `shellcheck`), `openspec validate` en `mkdir`, `ls`, `chmod`.
+  Sinds change `add-shellcheck-to-worker` (2026-09-08) zit `shellcheck` ook
+  echt in de worker-image, niet alleen in deze allowlist — daarvoor kon een
+  toegestaan commando ontbreken en liet een `verify.sh` die shellcheck alleen
+  "indien aanwezig" draait, de controle stil een no-op worden.
 - Deny: `git push` (pushen doet de entrypoint), netwerk (`curl`, `wget`,
   `ssh`, `scp`, `nc`), infra (`kubectl`, `docker`), dezelfde secrets-paden.
 

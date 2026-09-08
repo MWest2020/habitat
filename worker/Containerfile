@@ -8,8 +8,11 @@ FROM node:22.11.0-bookworm-slim
 COPY --from=ghcr.io/astral-sh/uv:0.11.15 /uv /uvx /bin/
 
 # git + ca-certificates + jq (verdict-parsing) + python3 (audit/rapport-tool)
+# + shellcheck: staat in de builder-allowlist en in verify.sh van doelrepo's,
+#   die hem alleen "indien aanwezig" aanroept — zonder shellcheck in de image
+#   degradeert die controle stil tot een no-op zonder dat het opvalt.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git ca-certificates jq python3 \
+ && apt-get install -y --no-install-recommends git ca-certificates jq python3 shellcheck \
  && rm -rf /var/lib/apt/lists/*
 
 # Claude Code headless (gepinde versie; ≥2.1.220 voor --json-schema/dontAsk/--setting-sources)
