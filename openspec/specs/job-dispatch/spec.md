@@ -1,7 +1,20 @@
 # job-dispatch Specification
 
 ## Purpose
-TBD - created by archiving change add-dispatch. Update Purpose after archive.
+
+Hoe werk een draaiende agent wordt: één geparametriseerde K8s-Job, en verder
+niets.
+
+Bewust géén runner-infrastructuur. Een Job heeft een begin, een eind en een
+status, en dat is precies wat je van een agent-run wilt weten zonder een tweede
+systeem te bouwen dat dat bijhoudt.
+
+De dragende eis is de **harde begrenzing in tijd en kosten**. Een agent die
+vastloopt, doorloopt of in een lus komt kost geld en aandacht zolang niemand
+kijkt — en niemand kijkt, want dat is het hele punt van autonoom werk. De grens
+hoort daarom in de Job zelf te zitten en niet in het oordeel van de agent. Dat de
+uitkomst uit de Job-status afleesbaar is volgt daaruit: als de grens toesloeg,
+moet dat zichtbaar anders zijn dan "klaar".
 ## Requirements
 ### Requirement: Geparametriseerde worker-Job
 

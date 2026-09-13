@@ -1,7 +1,19 @@
 # orchestrator-mandate Specification
 
 ## Purpose
-TBD - created by archiving change add-orchestrator. Update Purpose after archive.
+
+Wat de orchestrator zelfstandig mag, wanneer hij moet escaleren, en wat hij nooit
+doet.
+
+De hele opzet leunt erop dat iemand werk verdeelt zonder dat er bij elke stap een
+mens kijkt. Dat kan alleen als van tevoren is opgeschreven wáár het kijken weer
+begint. Vandaar de drie bakken — autonoom, escaleer, verboden — en niet twee: het
+midden is waar dit soort systemen normaal faalt, doordat "onduidelijk" in de
+praktijk "ga je gang" wordt.
+
+**Verboden paden zijn hard-fail**, geen waarschuwing. Een grens die je kunt
+passeren met een logregel is een suggestie, en een agent die twijfelt tussen
+doorgaan en stoppen kiest doorgaan.
 ## Requirements
 ### Requirement: Mandaat met autonoom/escaleer/verboden
 

@@ -1,7 +1,20 @@
 # worker-image-build Specification
 
 ## Purpose
-TBD - created by archiving change add-worker-image. Update Purpose after archive.
+
+Het image waar een worker in draait: reproduceerbaar, gepind, en per commit-SHA
+gepubliceerd.
+
+Een agent die zijn eigen gereedschap tijdens de run installeert, is een agent
+waarvan je achteraf niet kunt zeggen wát er draaide. Dus zit alles wat hij nodig
+heeft er al in — tools, testrunners, skills — en wordt het image geadresseerd op
+commit-SHA in plaats van op een tag die kan verschuiven.
+
+De skills zijn hier het interessante deel: ze zitten gepind in het image en
+worden **per rol gematerialiseerd**. Een zoeker heeft een andere subset nodig dan
+een architect, en alles meegeven kost context die de rol niet gebruikt. Het model
+komt om dezelfde reden uit de rol en niet uit een default: welk model iets deed,
+is onderdeel van wat er gebeurd is.
 ## Requirements
 ### Requirement: Reproduceerbare, gepinde Containerfile
 

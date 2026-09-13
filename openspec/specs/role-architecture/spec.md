@@ -1,7 +1,20 @@
 # role-architecture Specification
 
 ## Purpose
-TBD - created by archiving change add-role-architecture. Update Purpose after archive.
+
+Wat een rol is: een begrensde set gereedschap plus een vorm van uitvoer waar een
+poort iets mee kan.
+
+Rollen bestaan niet om agenten een persoonlijkheid te geven. Ze bestaan omdat
+"wat mag deze agent" en "waar kijk ik naar bij het beoordelen" dezelfde vraag
+zijn, en die hoort één keer beantwoord te worden in plaats van per run in een
+prompt.
+
+Twee eisen dragen de rest. De toolset wordt **afgedwongen**, niet gevraagd — een
+zoeker die kan schrijven is geen zoeker. En de uitvoer is **gestructureerd en
+gate-baar**: proza kun je niet automatisch beoordelen, dus dan wordt de mens de
+poort en is de autonomie weg. De architect-rol die plant zonder te bouwen is
+daarvan het scherpste geval: zijn waarde zit er juist in dat hij het níet doet.
 ## Requirements
 ### Requirement: Roles run with enforced minimal toolsets
 

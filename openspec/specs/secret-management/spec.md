@@ -1,7 +1,18 @@
 # secret-management Specification
 
 ## Purpose
-TBD - created by archiving change add-cage. Update Purpose after archive.
+
+Waar de sleutels staan en wie ze kan intrekken.
+
+De regel is kort: versleuteld-at-rest met SOPS+age, decrypt pas bij apply, en
+nooit leesbaar in git. Eén cluster-age-key houdt dat werkbaar zonder dat er een
+tweede secret-systeem bij komt.
+
+Het stuk dat er echt toe doet is **per node een eigen PAT**. Niet omdat dat
+netter staat, maar omdat het intrekken erdoor mogelijk wordt: één node
+gecompromitteerd of één run uit de hand, en je trekt precies die ene in zonder de
+rest stil te leggen. Een gedeeld token heeft die knop niet, en dan wordt "we
+zetten alles even uit" de enige reactie.
 ## Requirements
 ### Requirement: Secrets versleuteld-at-rest met SOPS+age
 

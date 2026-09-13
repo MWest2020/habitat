@@ -1,7 +1,17 @@
 # rbac-isolation Specification
 
 ## Purpose
-TBD - created by archiving change add-cage. Update Purpose after archive.
+
+Wat een rol in het cluster mag: een eigen ServiceAccount per rol, zo klein
+mogelijk.
+
+Zonder dit deelt elke agent de rechten van de grootste agent, en dan is de
+zwakste rol de effectieve grens. Eén SA per rol maakt "wat kan deze agent
+aanrichten" een vraag met een antwoord.
+
+De orchestrator-SA is apart en strakker begrensd genoemd, en dat is geen detail:
+dat is de enige identiteit die Jobs kan maken. Een orchestrator die meer mag dan
+dispatchen, is een agent die zichzelf meer kan geven.
 ## Requirements
 ### Requirement: ServiceAccount per rol, minimaal
 
