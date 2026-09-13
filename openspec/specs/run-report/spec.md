@@ -1,7 +1,17 @@
 # run-report Specification
 
 ## Purpose
-TBD - created by archiving change add-audit-report. Update Purpose after archive.
+
+Het run-rapport: één HTML-bestand dat zichzelf uitlegt, zonder server.
+
+Een audit die je alleen kunt lezen met het systeem dat hem maakte, is een audit
+die je in de praktijk niet leest. Daarom een single-file rapport dat je kunt
+mailen, bewaren en over een jaar nog openen.
+
+Het verifieert de hashketen **in de browser**. Dat is de reden dat dit een eigen
+capability is en geen opmaaklaagje: een rapport dat zegt dat de keten klopt
+zonder dat de lezer dat zelf kan narekenen, vraagt precies het vertrouwen dat de
+keten moest vervangen.
 ## Requirements
 ### Requirement: Zelfstandig single-file HTML-run-rapport
 

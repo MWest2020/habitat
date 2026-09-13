@@ -1,7 +1,21 @@
 # worker-execution Specification
 
 ## Purpose
-TBD - created by archiving change add-worker-image. Update Purpose after archive.
+
+Wat er binnen de kooi gebeurt: de env-interface van een worker, hoe hij aan code
+komt, hoe hij `claude -p` aanroept en hoe je achteraf ziet wat hij deed.
+
+Dit is de capability waar alle grenzen samenkomen, want dit is het enige stuk
+waar een agent echt iets doet. Vandaar de vorm: de interface is expliciet (een
+worker krijgt env, geen verrassingen), git is het overdrachtsmedium (clone en
+push over HTTPS met een PAT — geen gedeelde volumes, geen andere weg naar
+buiten), en elke run laat een rapport in de branch achter.
+
+De eis die het geheel draagt is de **tool-guard die credentials afschermt, niet
+de rol-definitie**. Dat onderscheid is met opzet scherp: een worker mag niet bij
+de sleutels waarmee hij zelf draait, maar hij moet wel kunnen lezen wat zijn rol
+is. Een guard die alles dichtgooit levert een agent die niet weet wat hij mag —
+en die vraagt het dan aan zichzelf.
 ## Requirements
 ### Requirement: Env-interface van een worker
 

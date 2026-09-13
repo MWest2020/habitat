@@ -1,7 +1,19 @@
 # network-isolation Specification
 
 ## Purpose
-TBD - created by archiving change add-cage. Update Purpose after archive.
+
+De kooi aan de netwerkkant: default-deny egress, en een allowlist die door het
+netwerk wordt afgedwongen in plaats van door goed gedrag.
+
+Een agent met internettoegang is een agent die kan exfiltreren en die aan
+willekeurige code kan komen. Daarom staat de deur dicht tenzij een domein
+expliciet open is gezet, en gebeurt dat CNI-native — een afspraak in een prompt
+is geen isolatie.
+
+Twee eisen die daar het scherpst aan hangen: egress moet **observeerbaar** zijn,
+want een allowlist waarvan niemand ziet wat hem raakte is niet te onderhouden;
+en **image-pulls vallen buiten de pod-policy**, omdat die pull vóór de pod komt
+en anders stilletjes je enige echte grens omzeilt.
 ## Requirements
 ### Requirement: Default-deny egress in de namespace
 

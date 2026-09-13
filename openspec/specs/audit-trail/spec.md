@@ -1,7 +1,18 @@
 # audit-trail Specification
 
 ## Purpose
-TBD - created by archiving change add-audit-report. Update Purpose after archive.
+
+Het spoor dat een run achterlaat: append-only en hash-geketend, zodat achteraf
+niet alleen te lezen is wát er gebeurde maar ook dat het niet is bijgewerkt.
+
+Een logbestand dat de agent zelf kan herschrijven bewijst niets over een agent.
+De keten is het bewijs, en die is het waard omdat dit systeem bestaat om werk te
+doen dat niemand live meekijkt.
+
+De **diff-hash die de audit aan de code bindt** is wat het verhaal afmaakt:
+zonder die koppeling weet je dat er iets gebeurd is en welke stappen er in het
+log staan, maar niet dat dít log bij díe wijziging hoort. Dan is de audit een
+verhaal naast de code in plaats van een verklaring ervan.
 ## Requirements
 ### Requirement: Append-only hash-chained audit-log
 
