@@ -87,12 +87,22 @@ Het script exporteert daarnaast `JOB_NAME`, `HABITAT_ROLE`, `HABITAT_CHANGE`,
 - Naast de code staat `run-report.json` op die branch. De `diff_hash` daarin
   dekt uitsluitend de agent-codewijziging; **exact de door habitat gegenereerde
   artefacten van de run** vallen erbuiten — op vaste naam plus de run-id, zónder
-  wildcards (`.habitat/audit.jsonl`, `.habitat/run-report-<run-id>.html`,
-  `.habitat/run-output-<run-id>.md`, `run-report.json`). Niet de hele
-  `.habitat/`-map en geen naam-wildcard, zodat élk ander bestand dat de agent
-  onder `.habitat/` schrijft wél meetelt (geen smokkelkanaal). Het exacte
+  wildcards (`.habitat/audit.jsonl`, `.habitat/run-report.json`,
+  `.habitat/run-report-<run-id>.html`, `.habitat/run-output-<run-id>.md`). Niet
+  de hele `.habitat/`-map en geen naam-wildcard, zodat élk ander bestand dat de
+  agent onder `.habitat/` schrijft wél meetelt (geen smokkelkanaal). Het exacte
   reproductie-commando (mét de concrete run-id) staat in het veld
   `diff_hash_scope` van `run-report.json`.
+
+  Die lijst noemt **precies de paden die habitat zelf schrijft, en geen pad
+  meer**, en dat is in beide richtingen load-bearing. Ontbreekt er één — zoals
+  `.habitat/run-report.json` tot 2026-09-13 — dan wijkt de hash die het rapport
+  meldt af van de hash die je vanaf de branch narekent, en meldt de verificatie
+  manipulatie terwijl er niets aan de hand is. Staat er één te veel — zoals
+  `run-report.json` in de repo-wortel, waar habitat sinds
+  `move-run-artifacts-out-of-git` niets meer neerzet — dan is dat vrije
+  ongehashte ruimte: de agent maakt dat bestand aan, het wordt gecommit, en het
+  valt buiten `diff_hash`.
 - De agent-eind-uitvoer (`result`) staat als `.habitat/run-output-<run-id>.md`
   op de branch. Habitat schrijft dit bestand **altijd** — ook zonder leesbaar
   `result` (dan een placeholder) — ná de diff-hash, zodat het artefact
