@@ -1,4 +1,4 @@
-# Verify-gate: shellcheck + yaml-syntax (test-gate, hub docs/reference/test-gate.md).
+# Verify-gate: shellcheck + yaml-syntax + de testsuites (test-gate, hub docs/reference/test-gate.md).
 name: verify
 on:
   pull_request:
@@ -13,6 +13,14 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y shellcheck >/dev/null
           find . -name '*.sh' -not -path './openspec/changes/archive/*' -print0 \
             | xargs -0 -r shellcheck --severity=warning
+      # Deze twee draaiden nergens. Gevolg: report/test_habitat_report.py las
+      # run-report.json nog uit de repo-wortel terwijl habitat het sinds
+      # move-run-artifacts-out-of-git in .habitat/ schrijft, en dat is maanden
+      # onopgemerkt gebleven. Een test die niet draait, is geen test.
+      - name: report-tests
+        run: python3 report/test_habitat_report.py
+      - name: tool-guard-tests
+        run: bash worker/hooks/test-pretooluse-guard.sh
       - name: yaml-syntax
         run: |
           python3 - <<'PY'

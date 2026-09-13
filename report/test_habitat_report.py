@@ -76,7 +76,7 @@ def test_diff_hash_reproducible():
 
         run_report(repo, base)
 
-        rr = json.loads((repo / "run-report.json").read_text())
+        rr = json.loads((repo / ".habitat" / "run-report.json").read_text())
         report_hash = rr["diff_hash"]
         assert "diff_hash_scope" in rr, "diff_hash_scope ontbreekt in run-report.json"
         # het gedocumenteerde scope-commando bevat de exacte run-id, geen wildcard
@@ -101,14 +101,15 @@ def test_diff_hash_reproducible():
                 f"agent-geschreven {smuggle} valt buiten de diff_hash — smokkelkanaal!"
 
         # Alléén de echte artefacten van deze run vallen buiten de hash.
-        for art in (".habitat/audit.jsonl", f".habitat/run-report-{RUN_ID}.html",
-                    f".habitat/run-output-{RUN_ID}.md", "run-report.json"):
+        for art in (".habitat/audit.jsonl", ".habitat/run-report.json",
+                    f".habitat/run-report-{RUN_ID}.html",
+                    f".habitat/run-output-{RUN_ID}.md"):
             assert art not in branch_diff, f"habitat-artefact {art} lekt de hash in"
 
         # De grove exclusie van de héle .habitat/-map zou de smokkelbestanden laten
         # vallen en een AFWIJKENDE hash geven — bewijst dat de precieze exclusie
         # load-bearing is (regressie t.o.v. round-1/round-2 security-FAILs).
-        coarse = diff_text(repo, base, ":(exclude).habitat", ":(exclude)run-report.json")
+        coarse = diff_text(repo, base, ":(exclude).habitat")
         assert ".habitat/evil.py" not in coarse, "test-aanname: grove exclusie dropt evil.py"
         assert sha(coarse) != report_hash, \
             "grove exclusie geeft dezelfde hash — precieze exclusie doet niets?"
@@ -116,9 +117,9 @@ def test_diff_hash_reproducible():
         # Idem: de wildcard-exclusie uit round-2 (afgekeurd) zou de vermomde
         # .html/.md laten vallen — moet dus óók afwijken van onze exacte hash.
         wildcard = diff_text(repo, base, ":(exclude).habitat/audit.jsonl",
+                             ":(exclude).habitat/run-report.json",
                              ":(exclude).habitat/run-report-*.html",
-                             ":(exclude).habitat/run-output-*.md",
-                             ":(exclude)run-report.json")
+                             ":(exclude).habitat/run-output-*.md")
         assert sha(wildcard) != report_hash, \
             "wildcard-exclusie geeft dezelfde hash — exacte run-id doet niets?"
 
@@ -156,7 +157,7 @@ def test_run_output_always_written():
         assert md.startswith("# Habitat builder — add-greeting"), md
         # valt buiten de diff_hash
         git(repo, "add", "-A"); git(repo, "commit", "-q", "-m", "run")
-        rr = json.loads((repo / "run-report.json").read_text())
+        rr = json.loads((repo / ".habitat" / "run-report.json").read_text())
         branch_diff = diff_text(repo, base, *artifact_excludes(RUN_ID))
         assert sha(branch_diff) == rr["diff_hash"], "run-output beïnvloedt de hash"
         assert f".habitat/run-output-{RUN_ID}.md" not in branch_diff

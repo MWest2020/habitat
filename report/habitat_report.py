@@ -28,15 +28,24 @@ def artifact_excludes(run_id: str, in_repo: bool = True) -> list:
     # Sinds move-run-artifacts-out-of-git schrijft habitat zijn artefacten buiten de
     # werkboom. Dan hoort er NIETS uitgesloten te worden: een uitsluiting op een pad
     # dat habitat niet meer schrijft, is een vrije ongehashte ruimte voor de agent
-    # (die `run-report.json` wél kan aanmaken, gecommit krijgt, en buiten diff_hash
-    # houdt). Alleen in de legacy-modus (artefacten in .habitat/) blijft de lijst.
+    # (die dat pad wél kan aanmaken, gecommit krijgt, en buiten diff_hash houdt).
+    # Alleen in de legacy-modus (artefacten in .habitat/) blijft de lijst — en die
+    # lijst noemt precies de paden die main() hieronder schrijft, geen pad meer.
+    # Tot 2026-09-13 stond `run-report.json` (repo-wortel) er nog in terwijl
+    # habitat daar allang niets meer neerzet: exact de vrije ruimte die deze
+    # opmerking beschrijft.
     if not in_repo:
         return []
     return [
         ":(exclude,literal).habitat/audit.jsonl",
+        # Habitat schrijft dit bestand zélf (zie main()), op vaste naam en in
+        # .habitat/. Stond het hier niet, dan wijkt de hash die het rapport MELDT
+        # af van de hash die je vanaf de gepushte branch narekent — en dan meldt
+        # de verificatie manipulatie terwijl er niets aan de hand is. Gemeten
+        # 2026-09-13: report 5e4a63c1…, branch 062466a0…
+        ":(exclude,literal).habitat/run-report.json",
         f":(exclude,literal).habitat/run-report-{run_id}.html",
         f":(exclude,literal).habitat/run-output-{run_id}.md",
-        ":(exclude,literal)run-report.json",
     ]
 
 
