@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 """Tests voor habitat_report.py (stdlib-only):
 1. diff_hash dekt alleen de agent-code, reproduceerbaar vanaf de branch; exact de
    run-artefacten uitgesloten (geen .habitat/-smokkelkanaal).

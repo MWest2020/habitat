@@ -70,4 +70,4 @@ werkt [docs/](docs/index.md) in dezelfde change bij (reviewer let hierop).
 
 ## Licentie
 
-[EUPL-1.2](LICENSE).
+[MIT](LICENSE).

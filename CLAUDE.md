@@ -24,8 +24,8 @@ Habitat weet níets van domeinlogica. Zie `README.md`.
 - **Secrets**: nooit hardcoded, nooit client-side, alleen SOPS+age. Nooit een
   gedecrypt secret committen.
 - **Immutable images**: getagd per commit-SHA, nooit `latest`.
-- **Licentie**: EUPL-1.2. Nieuwe bronbestanden krijgen een SPDX-header:
-  `# SPDX-License-Identifier: EUPL-1.2`.
+- **Licentie**: MIT. Nieuwe bronbestanden krijgen een SPDX-header:
+  `# SPDX-License-Identifier: MIT`.
 - **Commits blijven lokaal tot Mark pusht.**
 
 ## Verboden paden (hard-fail)

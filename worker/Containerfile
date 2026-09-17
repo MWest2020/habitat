@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Habitat worker-image: één container met Claude Code headless + uv + git + python3.
 # Alleen worker-eigen tools worden gebakken; doel-repo-deps komen runtime.
 # Gepinde versies, nooit `latest`. Build-context = repo-root.

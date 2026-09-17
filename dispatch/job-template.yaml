@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Geparametriseerd worker-Job-manifest. Gerenderd door dispatch.sh via envsubst.
 # Variabelen: JOB_NAME, HABITAT_ROLE, HABITAT_CHANGE, HABITAT_REPO, HABITAT_RUN_ID,
 # HABITAT_MAX_BUDGET_USD, ACTIVE_DEADLINE_SECONDS, PAT_SECRET, WORKER_IMAGE.
