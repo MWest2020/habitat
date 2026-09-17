@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Minimale RBAC. Rol-SA's krijgen GEEN API-token (automount uit) en geen rechten:
 # een worker praat nooit met de kube-API, hij draait alleen claude+git. De
 # orchestrator-SA mag precies genoeg om te dispatchen en logs te lezen.

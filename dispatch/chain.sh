@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Draai de volle rol-keten architect -> builder -> reviewer -> security en geef
 # de (run-unieke) builder-branch door aan reviewer en security via
 # HABITAT_BASE_BRANCH. Zo lezen die aantoonbaar de juiste builder-run, ook na

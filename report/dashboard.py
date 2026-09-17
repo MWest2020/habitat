@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 """Habitat aggregaat-dashboard: bundelt alle habitat/*-branches tot één
 self-contained, zelfverifiërend HTML-overzicht. Stdlib-only, geen runtime-deps.
 

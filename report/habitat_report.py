@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 """Habitat run-rapport + hash-chained audit. Stdlib-only, geen runtime-deps.
 
 Draait in de worker na `claude -p`: berekent de diff-hash van de gestagede

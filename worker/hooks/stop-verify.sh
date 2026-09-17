@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Stop-gate (builder): heeft de doelrepo een scripts/verify.sh, dan moet die
 # slagen vóór de run mag eindigen. Deterministisch waar promptinstructies
 # advisory zijn (change add-role-architecture, research.md A5).

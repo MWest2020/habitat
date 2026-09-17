@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Tweede verdedigingslaag naast de permissions-deny-lijst (deny-rules kenden een
 # afdwingbug — zie change add-role-architecture, research.md E). Draait voor ALLE
 # rollen. Faalt DICHT: bij een parse-/logicafout wordt de tool geweigerd, niet

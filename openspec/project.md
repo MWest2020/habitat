@@ -47,7 +47,7 @@ in de DOELREPO       ┘                          └── escalatie → Mark (
 - Saai en auditeerbaar boven snel of slim.
 - Immutable images, per commit-SHA getagd, nooit `latest`.
 - Secrets: alleen SOPS+age; nooit hardcoded of client-side.
-- Licentie: EUPL-1.2.
+- Licentie: MIT.
 
 ## Definition of done (v0)
 

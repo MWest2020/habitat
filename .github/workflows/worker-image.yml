@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Bouwt de worker-image en pusht naar GHCR, getagd per commit-SHA, nooit `latest`.
 name: worker-image
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Habitat worker-entrypoint: clone doelrepo (PAT over HTTPS) -> claude -p in een rol
 # -> push branch + run-report.json. Succes komt uit de JSON, niet uit de exit-code.
 set -euo pipefail

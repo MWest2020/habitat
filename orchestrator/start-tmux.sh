@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Zet de orchestrator-tmux op: venster 0 = de Claude Code-orchestrator-sessie +
 # een statuspane (wachtrij/escalaties). Job-log-panes voeg je op afroep toe.
 #   Gebruik: orchestrator/start-tmux.sh

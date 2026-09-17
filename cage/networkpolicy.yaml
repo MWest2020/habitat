@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Namespace-brede default-deny egress (standaard k8s NetworkPolicy, ook door Cilium
 # afgedwongen). Elke pod in `agents` mag standaard niets naar buiten; de toegestane
 # uitzonderingen voor workers staan in ciliumnetworkpolicy.yaml (toFQDNs). Policies

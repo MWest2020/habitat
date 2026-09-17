@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Unittest voor pretooluse-guard.sh: legt allow/deny per geval vast.
 # allow = guard geeft geen deny-beslissing (lege output, exit 0).
 # deny  = guard print permissionDecision:deny.

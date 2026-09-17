@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # Dispatch één rol-run als K8s-Job, stream de logs, en lees de uitkomst uit de
 # Job-status (niet uit de pod-exit-code). Bare met opzet.
 #   Gebruik: dispatch.sh <rol> <change> <repo> [run-id]

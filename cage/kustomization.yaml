@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: MIT
 # De kooi als één toepasbare eenheid: `kubectl apply -k cage/`.
 # Egress-filtering is Cilium-native (toFQDNs) — geen proxy. Secrets zitten hier
 # bewust NIET in: die gaan via decrypt-at-apply
