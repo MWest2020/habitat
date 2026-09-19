@@ -63,6 +63,10 @@ sowieso mag lezen.
   echt in de worker-image, niet alleen in deze allowlist — daarvoor kon een
   toegestaan commando ontbreken en liet een `verify.sh` die shellcheck alleen
   "indien aanwezig" draait, de controle stil een no-op worden.
+  Sinds change `add-go-toolchain-to-worker` geldt hetzelfde voor
+  `go test|build|vet`: Go 1.25.0 zit in de image, met `GOTOOLCHAIN=local`,
+  `GOPROXY=off` en `GOFLAGS=-mod=vendor`. Een Go-doelrepo moet dus haar
+  modules vendoren; de kooi opent geen egress naar de Go-moduleproxy.
 - Deny: `git push` (pushen doet de entrypoint), netwerk (`curl`, `wget`,
   `ssh`, `scp`, `nc`), infra (`kubectl`, `docker`), dezelfde secrets-paden.
 
