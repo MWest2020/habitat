@@ -57,7 +57,14 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: ["ALL"] }
           resources:
-            requests: { cpu: 250m, memory: 512Mi }
+            # 150m en niet 250m: een run staat het grootste deel van zijn leven
+            # te wachten op het model, niet te rekenen. De LIMIET blijft 2 CPU,
+            # dus een build mag nog steeds alles pakken wat vrij is.
+            # Aanleiding (2026-09-20): twee runs strandden zonder één regel
+            # uitvoer, en de oorzaak was de planner, niet de build —
+            # "0/6 nodes are available: 3 Insufficient cpu". De werknodes hebben
+            # 1 CPU elk en waren voor ~750m vergeven.
+            requests: { cpu: 150m, memory: 512Mi }
             limits:   { cpu: "2",  memory: 2Gi }
           volumeMounts:
             # sub-first auth: Claude-subscription-credentials read-only in de Job
