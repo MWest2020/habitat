@@ -12,7 +12,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 
 tmux has-session -t "$SESSION" 2>/dev/null && { echo "sessie '$SESSION' bestaat al — attach met: tmux attach -t $SESSION"; exit 0; }
 
-# Venster 0: de orchestrator draait claude met dit mandaat (orchestrator/CLAUDE.md)
+# Venster 0: de orchestrator draait claude met dit mandaat (orchestrator/AGENTS.md)
 tmux new-session -d -s "$SESSION" -n orchestrator -c "$HERE"
 tmux send-keys  -t "$SESSION":orchestrator "claude" C-m
 
@@ -24,7 +24,7 @@ tmux select-pane -t "$SESSION":orchestrator.0
 
 cat <<EOF
 tmux-sessie '$SESSION' klaar. Attach:  tmux attach -t $SESSION
-  pane 0 = orchestrator (claude, mandaat = orchestrator/CLAUDE.md)
+  pane 0 = orchestrator (claude, mandaat = orchestrator/AGENTS.md)
   pane 1 = status (wachtrij/escalaties)
 Log-pane per Job op afroep:
   tmux split-window -t $SESSION:orchestrator '$KUBECTL -n agents logs -f job/<jobnaam>'
