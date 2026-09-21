@@ -30,7 +30,7 @@ branch `habitat/<rol>/<change>` met een `run-report.json`. Volledige referentie:
   │ 1 Claude Code-     │  dispatch.sh /  │  Job: worker (claude -p)          │
   │ sessie, mandaat in │────kubectl─────▶│  default-deny egress + Cilium     │
   │ orchestrator/      │                 │  toFQDNs-allowlist (anthropic,    │
-  │ CLAUDE.md          │◀── run-rapport  │  github, pypi, npm) · RBAC min.   │
+  │ AGENTS.md          │◀── run-rapport  │  github, pypi, npm) · RBAC min.   │
   └────────────────────┘                 └──────────────┬───────────────────┘
        escaleert → Mark                                 │ push branch + run-report
                                                         ▼
@@ -43,7 +43,7 @@ branch `habitat/<rol>/<change>` met een `run-report.json`. Volledige referentie:
 - **Audit**: elke run hash-chained JSONL + single-file HTML-run-rapport op de
   branch, naast de code.
 - **Escalatie**: merges naar `main`, security-findings en spec-afwijkingen gaan
-  altijd via Mark; het volledige mandaat staat in `orchestrator/CLAUDE.md`.
+  altijd via Mark; het volledige mandaat staat in `orchestrator/AGENTS.md`.
 
 Details en waarom-besluiten: [docs/](docs/index.md), met name
 [docs/explanation/architecture.md](docs/explanation/architecture.md).
@@ -58,13 +58,13 @@ en op deze repo zelf zijn groen. Afgeronde changes staan in
 ## Grenzen
 
 **Verboden, hard-fail, nooit escaleerbaar** — agents verbouwen hun eigen kooi niet:
-wijzigingen aan `CLAUDE.md`, `.claude/agents/`, NetworkPolicies, RBAC of
+wijzigingen aan `AGENTS.md`, `.claude/agents/`, NetworkPolicies, RBAC of
 Job-templates. Dubbel afgedwongen (reviewer hard-fail + branch protection/CODEOWNERS).
 
 ## Werkwijze
 
 Conversational design → OpenSpec (`propose` → `apply` → `archive`) → implementatie.
-Changes staan onder [`openspec/`](openspec/). Zie [`CLAUDE.md`](CLAUDE.md) voor conventies.
+Changes staan onder [`openspec/`](openspec/). Zie [`AGENTS.md`](AGENTS.md) voor conventies.
 Documentatie beweegt mee met gedrag: wie `dispatch/`, `worker/` of `cage/` wijzigt,
 werkt [docs/](docs/index.md) in dezelfde change bij (reviewer let hierop).
 

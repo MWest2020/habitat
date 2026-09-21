@@ -18,7 +18,7 @@ domeinlogica. Eerste afnemer wordt *wordsworth* (aparte repo).
   │ orchestrator          │  kubectl     │ control-plane (HA):  cp-01 .202            │
   │ 1 Claude Code-sessie  │  (SA:        │                      cp-02 .203            │
   │ in tmux               │──orchestr.)─▶│                      cp-03 .204            │
-  │ mandaat in CLAUDE.md  │  API-VIP     │ workers:             node-01 .205          │
+  │ mandaat in AGENTS.md  │  API-VIP     │ workers:             node-01 .205          │
   │                       │  .201:6443   │                      node-02 .206          │
   │ escaleert → Mark      │◀─run-rapport │                      node-03 .207          │
   └──────────────────────┘              │  namespace: agents  ← de kooi              │
@@ -77,7 +77,7 @@ hash-chained audit-JSONL.
 - **Escaleren** (pauzeer, wacht op Mark, link rapport): elke merge naar `main`; elke
   security-finding; elke nieuwe dependency; spec-afwijking; >2 mislukte
   herstelrondes; kostendrempel per change overschreden.
-- **Verboden, hard-fail, nooit escaleerbaar**: wijziging aan `CLAUDE.md`,
+- **Verboden, hard-fail, nooit escaleerbaar**: wijziging aan `AGENTS.md`,
   `.claude/agents/`, NetworkPolicies, RBAC of Job-templates. Dubbel afgedwongen:
   reviewer faalt hard + GitHub branch protection/CODEOWNERS.
 

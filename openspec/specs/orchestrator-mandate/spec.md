@@ -17,7 +17,7 @@ doorgaan en stoppen kiest doorgaan.
 ## Requirements
 ### Requirement: Mandaat met autonoom/escaleer/verboden
 
-De orchestrator-sessie SHALL een `orchestrator/CLAUDE.md`-mandaat volgen dat
+De orchestrator-sessie SHALL een `orchestrator/AGENTS.md`-mandaat volgen dat
 letterlijk vastlegt wat autonoom mag, wat escaleert, en welke paden verboden zijn.
 De orchestrator SHALL zelf geen productiecode schrijven en zelf geen merge doen.
 
@@ -51,7 +51,7 @@ overschrijding van de kostendrempel per change.
 
 ### Requirement: Verboden paden zijn hard-fail
 
-De orchestrator SHALL wijzigingen aan `CLAUDE.md`, `.claude/agents/`,
+De orchestrator SHALL wijzigingen aan `AGENTS.md`, `.claude/agents/`,
 NetworkPolicies/CiliumNetworkPolicies, RBAC of Job-templates als harde fout
 behandelen — niet als escalatie. Dit SHALL dubbel afgedwongen zijn (reviewer +
 branch protection/CODEOWNERS).

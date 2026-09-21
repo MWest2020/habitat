@@ -141,8 +141,12 @@ if [ -n "${HABITAT_TASK_REF:-}" ]; then
 fi
 
 # 4. Rol-prompt — rollen leven in .claude/agents/ van de DÓELREPO, niet in Habitat
+# AGENTS.md of CLAUDE.md: de doelrepo's migreren een voor een, en de agent laadt
+# allebei automatisch. Beide noemen is tijdens die overgang het eerlijke antwoord;
+# een prompt die alleen het oude noemt, leest als "er is er maar een".
 PROMPT="Je bent de '${HABITAT_ROLE}'-agent voor deze repository. Volg
-.claude/agents/${HABITAT_ROLE}.md en het project-CLAUDE.md, en werk aan de
+.claude/agents/${HABITAT_ROLE}.md en het project-AGENTS.md (of CLAUDE.md in een
+repo die nog niet verhuisd is), en werk aan de
 OpenSpec-change '${HABITAT_CHANGE}'. Maak uitsluitend wijzigingen die bij die rol
 en die change horen."
 if [ -n "$TASK_CONTEXT" ]; then
