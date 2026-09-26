@@ -43,23 +43,28 @@ JOB_NAME=${JOB_NAME:0:63}
 VARS='$JOB_NAME $HABITAT_ROLE $HABITAT_CHANGE $HABITAT_REPO $HABITAT_RUN_ID $HABITAT_BASE_BRANCH'
 VARS+=' $HABITAT_MAX_BUDGET_USD $HABITAT_TASK_REF $ACTIVE_DEADLINE_SECONDS $PAT_SECRET $WORKER_IMAGE'
 
-# Subscription-token verloopt (~8u): sync het claude-credentials-secret bij elke
-# dispatch vanaf de bron op de orchestrator-host (diens eigen Claude-sessie houdt
-# dat bestand vers). Eén schrijver; workers refreshen nooit zelf — een refresh in
-# een wegwerp-Job kan de refresh-token roteren zonder persist (race bij parallel).
-# CLAUDE_CREDS_FILE= (leeg) slaat de sync over (secret blijft zoals uitgerold).
-CLAUDE_CREDS_FILE=${CLAUDE_CREDS_FILE-$HOME/.claude/.credentials.json}
+# Auth van de worker is CLAUDE_CODE_OAUTH_TOKEN (setup-token, 1 jaar; zie
+# job-template.yaml). Het claude-credentials-Secret (het ~8u-subscription-bestand)
+# is daarnaast optioneel en wordt alleen nog gesynchroniseerd als je erom vraagt:
+#   CLAUDE_CREDS_FILE=$HOME/.claude/.credentials.json dispatch.sh …
+# Tot 2026-09-26 stond die sync standaard AAN en las kubectl het pad — met een
+# remote KUBECTL ("ssh jumpy kubectl") op jumpy, waar het niet bestaat. Onder
+# set -euo pipefail brak de dispatch dan af vóór er een Job was. Het bestand
+# gaat nu via stdin, dus lokaal en remote werkt hetzelfde. Eén schrijver;
+# workers refreshen nooit zelf — een refresh in een wegwerp-Job kan de
+# refresh-token roteren zonder persist (race bij parallel).
+CLAUDE_CREDS_FILE=${CLAUDE_CREDS_FILE:-}
 if [ -n "$CLAUDE_CREDS_FILE" ] && [ -f "$CLAUDE_CREDS_FILE" ]; then
   exp_ms=$(jq -r '.claudeAiOauth.expiresAt // empty' "$CLAUDE_CREDS_FILE" 2>/dev/null || true)
   if [[ "$exp_ms" =~ ^[0-9]+$ ]] && [ "$(( exp_ms / 1000 ))" -lt "$(( $(date +%s) + ACTIVE_DEADLINE_SECONDS ))" ]; then
     echo "[dispatch] WAARSCHUWING: subscription-token verloopt vóór de Job-deadline (${ACTIVE_DEADLINE_SECONDS}s)"
   fi
   $KUBECTL -n agents create secret generic claude-credentials \
-    --from-file=credentials.json="$CLAUDE_CREDS_FILE" \
-    --dry-run=client -o yaml | $KUBECTL apply -f -
+    --from-file=credentials.json=/dev/stdin \
+    --dry-run=client -o yaml < "$CLAUDE_CREDS_FILE" | $KUBECTL apply -f -
   echo "[dispatch] claude-credentials gesynchroniseerd vanaf $CLAUDE_CREDS_FILE"
 else
-  echo "[dispatch] geen credentials-bestand; claude-credentials blijft zoals uitgerold"
+  echo "[dispatch] auth: setup-token uit het Job-template (claude-credentials niet gesynchroniseerd)"
 fi
 
 echo "[dispatch] Job=$JOB_NAME rol=$ROLE change=$CHANGE repo=$REPO"

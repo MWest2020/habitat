@@ -37,7 +37,7 @@ deny-by-default via `--permission-mode dontAsk`) en een output-JSON-schema
 | `ACTIVE_DEADLINE_SECONDS` | `1800` | `activeDeadlineSeconds` op de Job |
 | `PAT_SECRET` | `pat-node-01` | secret met `GIT_PAT` (git-auth over HTTPS) |
 | `HABITAT_LOGDIR` | `./run-logs` | doelmap voor gearchiveerde logs |
-| `CLAUDE_CREDS_FILE` | `~/.claude/.credentials.json` | bron voor de `claude-credentials`-sync per dispatch (subscription-token verloopt ~8u); leeg = sync overslaan. Overbodig zodra het Secret `claude-oauth-token` bestaat — zie hieronder |
+| `CLAUDE_CREDS_FILE` | leeg | alleen voor het oude pad 2 hieronder: bron voor de `claude-credentials`-sync per dispatch (subscription-token verloopt ~8u). Leeg = geen sync; de worker gebruikt dan `claude-oauth-token`. Het bestand gaat via stdin naar kubectl, dus het werkt ook met een remote `KUBECTL` (tot 2026-09-26 las kubectl het pad op de remote host en brak de dispatch af) |
 
 ## Worker-auth
 
@@ -53,10 +53,11 @@ De entrypoint kiest, in deze volgorde:
    kubectl -n agents create secret generic claude-oauth-token --from-literal=token=<token>
    ```
 
-   Daarna mag `CLAUDE_CREDS_FILE=` (leeg) en kan het Secret
-   `claude-credentials` weg; beide mounts zijn `optional`.
+   Dat is sinds 2026-09-26 de standaard: `CLAUDE_CREDS_FILE` staat leeg en het
+   Secret `claude-credentials` mag weg; beide mounts zijn `optional`.
 2. **Gemounte sessie-credentials** (`claude-credentials`) — het oude
-   sub-first-pad, alleen vers zolang `dispatch.sh` ze meesynchroniseert.
+   sub-first-pad, alleen vers als je `dispatch.sh` met
+   `CLAUDE_CREDS_FILE=~/.claude/.credentials.json` draait.
 3. **`ANTHROPIC_API_KEY`** — Console-key, verloopt niet, maar rekent per token
    af buiten het abonnement om.
 
