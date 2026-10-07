@@ -36,7 +36,9 @@ RUN apt-get update \
 #   Pakket is `@fission-ai/openspec` — het kale `openspec` op npm is een lege
 #   placeholder (0.0.0). Versie gepind op wat lokaal en in de hub gebruikt wordt,
 #   zodat een run-validatie hetzelfde oordeelt als een validatie op een werkstation.
-RUN npm install -g @anthropic-ai/claude-code@2.1.220 @fission-ai/openspec@1.3.1 \
+#   Was 1.3.1 tot 2026-10-07; het werkstation draaide intussen 1.12.0, en op
+#   2026-09-23 keurde een builder daardoor een change af die lokaal geldig was.
+RUN npm install -g @anthropic-ai/claude-code@2.1.220 @fission-ai/openspec@1.12.0 \
  && npm cache clean --force
 
 # Skill-bodies uit skill-forge, gepind op commit (nooit een branch: de image is
