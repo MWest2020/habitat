@@ -14,7 +14,9 @@
       "Bash(go test *)", "Bash(go build *)", "Bash(go vet *)",
       "Bash(make *)", "Bash(pytest *)", "Bash(shellcheck *)",
       "Bash(mkdir *)", "Bash(ls *)", "Bash(chmod *)",
-      "Bash(openspec validate *)"
+      "Bash(openspec validate *)",
+      "Bash(bash verify.sh)", "Bash(./verify.sh)",
+      "Bash(python3 -m unittest)", "Bash(python3 -m unittest *)", "Bash(python3 -m pytest *)"
     ],
     "deny": [
       "Bash(git push)", "Bash(git push *)",
