@@ -12,7 +12,9 @@ Het verifieert de hashketen **in de browser**. Dat is de reden dat dit een eigen
 capability is en geen opmaaklaagje: een rapport dat zegt dat de keten klopt
 zonder dat de lezer dat zelf kan narekenen, vraagt precies het vertrouwen dat de
 keten moest vervangen.
+
 ## Requirements
+
 ### Requirement: Zelfstandig single-file HTML-run-rapport
 
 Elke run SHALL een `run-report-<run_id>.html` genereren: één bestand,
@@ -57,3 +59,15 @@ en per schakel geldig/ongeldig tonen, zodat de lezer zonder tooling kan verifië
 - **WHEN** een regel is gemanipuleerd
 - **THEN** toont het rapport de betreffende schakel als ongeldig (✗)
 
+### Requirement: A rejected structured output is explained in the job log
+
+When a role run ends with subtype `error_max_structured_output_retries`, the
+worker SHALL write the tail of the agent's last answer (at most 2000
+characters) to the job log, after the secret scan and with the same secret
+patterns redacted. The run SHALL still fail closed.
+
+#### Scenario: A builder whose verdict never matched the schema
+
+- **WHEN** a builder run ends with `error_max_structured_output_retries`
+- **THEN** the job log shows the end of its last answer, with any secret
+  pattern replaced by `[REDACTED]`, and the run's verdict is `failed`

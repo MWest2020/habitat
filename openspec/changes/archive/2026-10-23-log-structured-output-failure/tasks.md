@@ -6,4 +6,4 @@
       fixture envelope with that subtype and a fake `sk-ant-` token: the tail
       is logged and the token shows as `[REDACTED]`. The entrypoint as a whole
       has no harness; `bash -n` and shellcheck pass.
-- [ ] Push; the worker image rebuilds; ratatoskr `agents/factory.yml` pins it.
+- [x] Push; the worker image rebuilt (9fec55d); ratatoskr `agents/factory.yml` pins it.
