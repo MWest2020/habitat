@@ -243,6 +243,15 @@ if grep -Eq "$SECRET_RE" "$OUT" 2>/dev/null \
 fi
 log "verdict=${VERDICT} rol-verdict=${ROLE_VERDICT:-geen} subtype=${SUBTYPE} cost=${COST} turns=${TURNS}"
 
+# 5c. A rejected structured output says why (change log-structured-output-failure).
+# 2026-10-23 a builder finished the work and still failed on its verdict JSON, and
+# the log could not say which field was wrong. After the secret scan, redacted.
+if [ "$SUBTYPE" = "error_max_structured_output_retries" ]; then
+  log "structured output rejected by the schema; tail of the agent's last answer:"
+  jq -r '.result // "" | tostring' "$OUT" 2>/dev/null | tail -c 2000 \
+    | sed -E "s/${SECRET_RE}/[REDACTED]/g" | sed 's/^/[habitat]   /'
+fi
+
 # 6. Stage de agent-wijziging, genereer hash-chained audit + HTML-run-rapport +
 # de agent-eind-uitvoer (.habitat/run-output-<id>.md). habitat_report.py schrijft
 # run-output ALTIJD (ook zonder .result: placeholder) en ná de diff-hash, zodat
