@@ -30,6 +30,12 @@ HABITAT_ROLE=$ROLE HABITAT_CHANGE=$CHANGE HABITAT_REPO=$REPO HABITAT_RUN_ID=$RUN
 HABITAT_BASE_BRANCH=${HABITAT_BASE_BRANCH:-}
 HABITAT_TASK_REF=${HABITAT_TASK_REF:-}
 HABITAT_MAX_BUDGET_USD=${HABITAT_MAX_BUDGET_USD:-5.00}
+# The builder may get its own budget (builder-budget, 2026-10-24): it does the
+# work, the other roles read and judge. convergence builders hit the shared $5
+# at 127-138 turns while no other role passed $1.03.
+if [ "$ROLE" = builder ] && [ -n "${HABITAT_BUILDER_BUDGET_USD:-}" ]; then
+  HABITAT_MAX_BUDGET_USD=$HABITAT_BUILDER_BUDGET_USD
+fi
 # The builder gets an hour, the other roles 30 minutes (change builder-deadline,
 # 2026-10-24): since the worker has a test database, the builder runs a repo's
 # DB tests too, and a wordsworth build no longer fit in 30 minutes.
