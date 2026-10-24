@@ -126,6 +126,14 @@ Secret, so the worker cannot fall back to the subscription. ratatoskr sets
 api mode for the repositories in its `api_repos` (convergence). Proven with a
 probe Job: `apiKeySource: ANTHROPIC_API_KEY`, no setup-token in the env.
 
+## The builder runs Node projects too (builder-runs-npm)
+
+Besides `npm ci`, `npm test *` and `bash verify.sh`, the builder may run
+`npm install` (to write a lockfile and add dependencies), `npm test` and
+`node --test`. Without `npm install` a new package has no lockfile, `npm ci`
+fails, and on 2026-10-24 the convergence builder read that as a sandbox that
+refuses all code and handed in tests that never ran.
+
 ## Branch- en run-report-conventie
 
 - De worker pusht een **run-unieke** branch
