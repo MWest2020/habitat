@@ -134,6 +134,12 @@ Besides `npm ci`, `npm test *` and `bash verify.sh`, the builder may run
 fails, and on 2026-10-24 the convergence builder read that as a sandbox that
 refuses all code and handed in tests that never ran.
 
+## The builder's own budget (builder-budget)
+
+`HABITAT_BUILDER_BUDGET_USD`, when set, is the builder's `--max-budget-usd`;
+the other roles keep `HABITAT_MAX_BUDGET_USD`. convergence builders hit the
+shared $5 at 127-138 turns while no other role passed $1.03 (2026-10-24).
+
 ## Branch- en run-report-conventie
 
 - De worker pusht een **run-unieke** branch
