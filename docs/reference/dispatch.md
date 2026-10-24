@@ -100,6 +100,14 @@ failed by its reviewer: "written but never run". Live proof on the cluster:
 a probe Job from this template queried `PostgreSQL 16.15` through the
 sidecar and completed.
 
+## Deadline per role (builder-deadline)
+
+Without an explicit `ACTIVE_DEADLINE_SECONDS`, a builder Job gets 3600 s and
+the other roles 1800 s; dispatch waits the deadline plus 600 s for an outcome.
+Since the worker has a test database the builder runs a repository's DB
+tests, and on 2026-10-24 a wordsworth builder hit 1800 s
+(`DeadlineExceeded`, wordsworth#221).
+
 ## Branch- en run-report-conventie
 
 - De worker pusht een **run-unieke** branch

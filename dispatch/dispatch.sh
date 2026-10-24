@@ -30,7 +30,11 @@ HABITAT_ROLE=$ROLE HABITAT_CHANGE=$CHANGE HABITAT_REPO=$REPO HABITAT_RUN_ID=$RUN
 HABITAT_BASE_BRANCH=${HABITAT_BASE_BRANCH:-}
 HABITAT_TASK_REF=${HABITAT_TASK_REF:-}
 HABITAT_MAX_BUDGET_USD=${HABITAT_MAX_BUDGET_USD:-5.00}
-ACTIVE_DEADLINE_SECONDS=${ACTIVE_DEADLINE_SECONDS:-1800}
+# The builder gets an hour, the other roles 30 minutes (change builder-deadline,
+# 2026-10-24): since the worker has a test database, the builder runs a repo's
+# DB tests too, and a wordsworth build no longer fit in 30 minutes.
+if [ "$ROLE" = builder ]; then DEFAULT_DEADLINE=3600; else DEFAULT_DEADLINE=1800; fi
+ACTIVE_DEADLINE_SECONDS=${ACTIVE_DEADLINE_SECONDS:-$DEFAULT_DEADLINE}
 PAT_SECRET=${PAT_SECRET:-pat-node-01}
 slug=$(echo "$CHANGE" | tr '/_ ' '---' | tr '[:upper:]' '[:lower:]')
 # Repo-naam in de Job-naam: zonder botsen parallelle dispatches van dezelfde
