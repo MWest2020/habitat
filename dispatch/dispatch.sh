@@ -36,6 +36,18 @@ HABITAT_MAX_BUDGET_USD=${HABITAT_MAX_BUDGET_USD:-5.00}
 if [ "$ROLE" = builder ]; then DEFAULT_DEADLINE=3600; else DEFAULT_DEADLINE=1800; fi
 ACTIVE_DEADLINE_SECONDS=${ACTIVE_DEADLINE_SECONDS:-$DEFAULT_DEADLINE}
 PAT_SECRET=${PAT_SECRET:-pat-node-01}
+# Who pays (change worker-api-auth, 2026-10-24): the subscription (default), or
+# Mark's API credits. An absent Secret leaves an optional env var unset, so in
+# api mode the worker has the key and nothing to fall back to.
+HABITAT_AUTH=${HABITAT_AUTH:-subscription}
+case "$HABITAT_AUTH" in
+  subscription) OAUTH_SECRET=claude-oauth-token; CREDS_SECRET=claude-credentials
+                API_KEY_SECRET=habitat-none ;;
+  api)          OAUTH_SECRET=habitat-none; CREDS_SECRET=habitat-none
+                API_KEY_SECRET=habitat-api-key ;;
+  *) echo "[dispatch] HABITAT_AUTH must be subscription or api, not '$HABITAT_AUTH'"; exit 1 ;;
+esac
+export OAUTH_SECRET CREDS_SECRET API_KEY_SECRET
 slug=$(echo "$CHANGE" | tr '/_ ' '---' | tr '[:upper:]' '[:lower:]')
 # Repo-naam in de Job-naam: zonder botsen parallelle dispatches van dezelfde
 # rol+change voor verschillende repos in dezelfde seconde (les 2026-07-13).
@@ -46,6 +58,7 @@ JOB_NAME=${JOB_NAME:0:63}
 
 VARS='$JOB_NAME $HABITAT_ROLE $HABITAT_CHANGE $HABITAT_REPO $HABITAT_RUN_ID $HABITAT_BASE_BRANCH'
 VARS+=' $HABITAT_MAX_BUDGET_USD $HABITAT_TASK_REF $ACTIVE_DEADLINE_SECONDS $PAT_SECRET $WORKER_IMAGE'
+VARS+=' $OAUTH_SECRET $CREDS_SECRET $API_KEY_SECRET'
 
 # Auth van de worker is CLAUDE_CODE_OAUTH_TOKEN (setup-token, 1 jaar; zie
 # job-template.yaml). Het claude-credentials-Secret (het ~8u-subscription-bestand)
@@ -68,7 +81,11 @@ if [ -n "$CLAUDE_CREDS_FILE" ] && [ -f "$CLAUDE_CREDS_FILE" ]; then
     --dry-run=client -o yaml < "$CLAUDE_CREDS_FILE" | $KUBECTL apply -f -
   echo "[dispatch] claude-credentials gesynchroniseerd vanaf $CLAUDE_CREDS_FILE"
 else
-  echo "[dispatch] auth: setup-token uit het Job-template (claude-credentials niet gesynchroniseerd)"
+  if [ "$HABITAT_AUTH" = api ]; then
+    echo "[dispatch] auth: API key (Secret habitat-api-key), billed to the API credits"
+  else
+    echo "[dispatch] auth: setup-token uit het Job-template (claude-credentials niet gesynchroniseerd)"
+  fi
 fi
 
 echo "[dispatch] Job=$JOB_NAME rol=$ROLE change=$CHANGE repo=$REPO"

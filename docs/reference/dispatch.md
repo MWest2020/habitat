@@ -116,6 +116,16 @@ never as a trial. On 2026-10-24 an architect tried out the schema with a call
 whose summary read "Test call to isolate schema issue…", and the chain
 stopped on that (wordsworth#221).
 
+## Who pays: HABITAT_AUTH (worker-api-auth)
+
+`HABITAT_AUTH=subscription` (the default) runs the worker on the setup-token
+Secret `claude-oauth-token`, with `claude-credentials` as the optional mount.
+`HABITAT_AUTH=api` runs it on Mark's API credits: `ANTHROPIC_API_KEY` from
+Secret `habitat-api-key` (key `key`), and the other two point at an absent
+Secret, so the worker cannot fall back to the subscription. ratatoskr sets
+api mode for the repositories in its `api_repos` (convergence). Proven with a
+probe Job: `apiKeySource: ANTHROPIC_API_KEY`, no setup-token in the env.
+
 ## Branch- en run-report-conventie
 
 - De worker pusht een **run-unieke** branch

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Geparametriseerd worker-Job-manifest. Gerenderd door dispatch.sh via envsubst.
 # Variabelen: JOB_NAME, HABITAT_ROLE, HABITAT_CHANGE, HABITAT_REPO, HABITAT_RUN_ID,
-# HABITAT_MAX_BUDGET_USD, ACTIVE_DEADLINE_SECONDS, PAT_SECRET, WORKER_IMAGE.
+# HABITAT_MAX_BUDGET_USD, ACTIVE_DEADLINE_SECONDS, PAT_SECRET, WORKER_IMAGE,
+# OAUTH_SECRET, CREDS_SECRET, API_KEY_SECRET (set by dispatch.sh from HABITAT_AUTH).
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -82,8 +83,17 @@ spec:
             - name: CLAUDE_CODE_OAUTH_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: claude-oauth-token
+                  name: ${OAUTH_SECRET}
                   key: token
+                  optional: true
+            # API credits (change worker-api-auth): with HABITAT_AUTH=api dispatch
+            # names the key's Secret here and an absent one for the two above,
+            # so the entrypoint cannot fall back to the subscription.
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ${API_KEY_SECRET}
+                  key: key
                   optional: true
           securityContext:
             allowPrivilegeEscalation: false
@@ -106,7 +116,7 @@ spec:
         - { name: testdb-run, emptyDir: {} }
         - name: claude-creds
           secret:
-            secretName: claude-credentials
+            secretName: ${CREDS_SECRET}
             # optional: met CLAUDE_CODE_OAUTH_TOKEN is dit Secret overbodig;
             # zonder deze regel zou het verwijderen ervan elke Job blokkeren.
             optional: true
