@@ -28,6 +28,15 @@ run_role() {
   set +e
   "$HERE/dispatch.sh" "$role" "$CHANGE" "$REPO" 2>&1 | tee "$log"
   rc=${PIPESTATUS[0]}
+  # A role that could not put its answer in the schema is a model hiccup, not a
+  # verdict (retry-structured-output, 2026-10-24: three chains stopped on it in
+  # one day, one after architect, builder and reviewer had passed). Once more,
+  # this role only.
+  if [ "$rc" -ne 0 ] && grep -q 'subtype=error_max_structured_output_retries' "$log"; then
+    echo "keten: rol ${role} gaf geen geldig gestructureerd antwoord — één herhaling"
+    "$HERE/dispatch.sh" "$role" "$CHANGE" "$REPO" 2>&1 | tee "$log"
+    rc=${PIPESTATUS[0]}
+  fi
   set -e
   REPLY=$(grep -oE '^\[dispatch\] branch=habitat/[^[:space:]]+' "$log" | tail -1 | sed 's/.*branch=//') || REPLY=""
   rm -f "$log"

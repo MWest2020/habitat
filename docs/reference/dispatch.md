@@ -140,6 +140,14 @@ refuses all code and handed in tests that never ran.
 the other roles keep `HABITAT_MAX_BUDGET_USD`. convergence builders hit the
 shared $5 at 127-138 turns while no other role passed $1.03 (2026-10-24).
 
+## One retry on a failed structured answer (retry-structured-output)
+
+A role whose run ends on `error_max_structured_output_retries` (the model
+could not fit its answer into the role's schema) is dispatched once more by
+`chain.sh`; only if that fails too does the chain stop. On 2026-10-24 three
+chains stopped on it, one of them after architect, builder and reviewer had
+passed.
+
 ## Branch- en run-report-conventie
 
 - De worker pusht een **run-unieke** branch
