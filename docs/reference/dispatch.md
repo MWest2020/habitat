@@ -1,6 +1,6 @@
 ---
 status: draft
-last_reviewed: 2026-07-29
+last_reviewed: 2026-10-24
 ---
 
 # Dispatch-contract
@@ -78,6 +78,27 @@ Het script exporteert daarnaast `JOB_NAME`, `HABITAT_ROLE`, `HABITAT_CHANGE`,
 - **Isolatie**: `serviceAccountName: role-<rol>`, `automountServiceAccountToken: false`,
   `backoffLimit: 0`, `restartPolicy: Never`, `ttlSecondsAfterFinished: 3600`,
   capabilities `drop: ["ALL"]`, `allowPrivilegeEscalation: false`.
+
+## Test database (worker-test-database)
+
+Every worker Job has a native sidecar `testdb`: `postgres:16-alpine` (pinned
+by digest, the image wordsworth's CI uses) on an `emptyDir`, listening on
+`127.0.0.1` only. Its `pg_isready` startup probe holds the worker until the
+database answers, and it stops with the worker. It runs as uid 70 with every
+capability dropped.
+
+The worker gets the URL twice, with the same value:
+
+- `HABITAT_TEST_DATABASE_URL`, the generic name;
+- `WORDSWORTH_TEST_DATABASE_URL`, the name wordsworth's `tests/conftest.py`
+  reads, so its DB tests run instead of skipping.
+
+Why: on 2026-10-24 the wordsworth change `pilot-ingest-manifest` went through
+the chain three times with every DB test skipped in the builder. One build
+failed only in CI, on a DB assertion no role could have run. The next was
+failed by its reviewer: "written but never run". Live proof on the cluster:
+a probe Job from this template queried `PostgreSQL 16.15` through the
+sidecar and completed.
 
 ## Branch- en run-report-conventie
 
