@@ -108,6 +108,14 @@ Since the worker has a test database the builder runs a repository's DB
 tests, and on 2026-10-24 a wordsworth builder hit 1800 s
 (`DeadlineExceeded`, wordsworth#221).
 
+## The structured answer is final (verdict-is-final)
+
+Roles run under `--json-schema`, so their first StructuredOutput call is the
+answer and ends the run. The role prompt says so: give it once, at the end,
+never as a trial. On 2026-10-24 an architect tried out the schema with a call
+whose summary read "Test call to isolate schema issue…", and the chain
+stopped on that (wordsworth#221).
+
 ## Branch- en run-report-conventie
 
 - De worker pusht een **run-unieke** branch
