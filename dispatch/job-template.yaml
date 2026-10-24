@@ -30,6 +30,35 @@ spec:
       imagePullSecrets:
         - name: ghcr-pull
       terminationGracePeriodSeconds: 10
+      # A throwaway test database (change worker-test-database, 2026-10-24): a
+      # native sidecar, so it starts before the worker, holds it until
+      # pg_isready answers, and stops with it. Loopback only; the data is an
+      # emptyDir and dies with the pod. Without it every DB test in a repo
+      # skipped and the builder said PASS on tests it never ran (wordsworth#219).
+      initContainers:
+        - name: testdb
+          image: postgres:16-alpine@sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36
+          restartPolicy: Always
+          env:
+            - { name: POSTGRES_PASSWORD, value: "habitat" }   # throwaway, loopback only
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+          args: ["-c", "listen_addresses=127.0.0.1", "-c", "fsync=off"]
+          startupProbe:
+            exec: { command: ["pg_isready", "-h", "127.0.0.1", "-U", "postgres"] }
+            periodSeconds: 2
+            failureThreshold: 60
+          securityContext:
+            runAsUser: 70
+            runAsGroup: 70
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          resources:
+            requests: { cpu: 20m, memory: 64Mi }
+            limits:   { cpu: "1", memory: 512Mi }
+          volumeMounts:
+            - { name: testdb-data, mountPath: /var/lib/postgresql/data }
+            - { name: testdb-run, mountPath: /var/run/postgresql }
       containers:
         - name: worker
           image: ${WORKER_IMAGE}
@@ -41,6 +70,9 @@ spec:
             - { name: HABITAT_BASE_BRANCH, value: "${HABITAT_BASE_BRANCH}" }
             - { name: HABITAT_TASK_REF, value: "${HABITAT_TASK_REF}" }
             - { name: HABITAT_MAX_BUDGET_USD, value: "${HABITAT_MAX_BUDGET_USD}" }
+            # the testdb sidecar; the second name is the one wordsworth's conftest reads
+            - { name: HABITAT_TEST_DATABASE_URL, value: "postgresql+psycopg://postgres:habitat@127.0.0.1:5432/postgres" }
+            - { name: WORDSWORTH_TEST_DATABASE_URL, value: "postgresql+psycopg://postgres:habitat@127.0.0.1:5432/postgres" }
             - name: GIT_PAT
               valueFrom:
                 secretKeyRef: { name: ${PAT_SECRET}, key: GIT_PAT }
@@ -70,6 +102,8 @@ spec:
             # sub-first auth: Claude-subscription-credentials read-only in de Job
             - { name: claude-creds, mountPath: /var/run/claude, readOnly: true }
       volumes:
+        - { name: testdb-data, emptyDir: {} }
+        - { name: testdb-run, emptyDir: {} }
         - name: claude-creds
           secret:
             secretName: claude-credentials
