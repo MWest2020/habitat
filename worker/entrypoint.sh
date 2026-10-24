@@ -148,7 +148,11 @@ PROMPT="Je bent de '${HABITAT_ROLE}'-agent voor deze repository. Volg
 .claude/agents/${HABITAT_ROLE}.md en het project-AGENTS.md (of CLAUDE.md in een
 repo die nog niet verhuisd is), en werk aan de
 OpenSpec-change '${HABITAT_CHANGE}'. Maak uitsluitend wijzigingen die bij die rol
-en die change horen."
+en die change horen.
+
+Your structured answer (the StructuredOutput tool) is your final verdict and
+ends the run. Give it exactly once, at the end, with your real verdict. Never
+call it to try out the schema: a trial call becomes the verdict."
 if [ -n "$TASK_CONTEXT" ]; then
   PROMPT="${PROMPT}
 
