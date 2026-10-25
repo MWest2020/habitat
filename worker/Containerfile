@@ -60,7 +60,8 @@ COPY worker/settings/ /opt/habitat/settings/
 COPY worker/schemas/  /opt/habitat/schemas/
 COPY worker/hooks/    /opt/habitat/hooks/
 COPY worker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh /opt/habitat/hooks/*.sh \
+COPY worker/role-seed.sh /opt/habitat/role-seed.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /opt/habitat/role-seed.sh /opt/habitat/hooks/*.sh \
  && useradd -m -u 10001 worker \
  && mkdir -p /work && chown worker:worker /work
 
