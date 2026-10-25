@@ -93,10 +93,23 @@ git checkout -b "$BRANCH"
 BASE_REF=$(git rev-parse HEAD)   # basis vóór de agent; diff_hash meet hiertegen
 export HABITAT_BASE_REF="$BASE_REF"   # stop-verify draait verify.sh uit deze commit
 
-# 3b. Model + skills uit het rolbestand van de DOELREPO (.claude/agents/<rol>.md,
-# front-matter). De handbook is de bron; de seed draagt de velden mee, dus de
-# worker hoeft de registry niet op te halen.
-ROLE_FILE=".claude/agents/${HABITAT_ROLE}.md"
+# 3b. The role file: model, skills and the role's instructions (front matter +
+# body). It comes from the handbook (docs/agents/seeds/<role>.md) at the pinned
+# commit HABITAT_HANDBOOK_REF (Mark, 2026-10-25: the handbook is where agents
+# and skills live, habitat consumes them for every project). It is written
+# OUTSIDE the work tree (/work/role/), because the entrypoint commits with
+# `git add -A`: a seed inside the repo would land in the role's commit.
+# Migration: without HABITAT_HANDBOOK_REF the target repo's own
+# .claude/agents/<role>.md is used, with a warning. With the ref set, a failed
+# fetch or a missing seed stops the run; it never falls back silently.
+HANDBOOK_BASE=${HABITAT_HANDBOOK_BASE:-https://raw.githubusercontent.com/MWest2020/handbook}
+# shellcheck source=role-seed.sh
+. /opt/habitat/role-seed.sh
+if ! resolve_role_file "$HABITAT_ROLE" "${HABITAT_HANDBOOK_REF:-}" "$HANDBOOK_BASE" /work/role; then
+  log "role file: stopping, no handbook seed for '${HABITAT_ROLE}' at ${HABITAT_HANDBOOK_REF} (fail closed)"
+  exit 1
+fi
+log "role file: ${ROLE_SOURCE}"
 ROLE_MODEL=""
 if [ -f "$ROLE_FILE" ]; then
   ROLE_MODEL=$(sed -n 's/^model:[[:space:]]*\([a-z0-9-]*\).*/\1/p' "$ROLE_FILE" | head -1)
@@ -140,19 +153,35 @@ if [ -n "${HABITAT_TASK_REF:-}" ]; then
   log "taak-referentie geladen: ${HABITAT_TASK_REF} ($(wc -c < "$WORK/$HABITAT_TASK_REF") bytes)"
 fi
 
-# 4. Rol-prompt — rollen leven in .claude/agents/ van de DÓELREPO, niet in Habitat
-# AGENTS.md of CLAUDE.md: de doelrepo's migreren een voor een, en de agent laadt
-# allebei automatisch. Beide noemen is tijdens die overgang het eerlijke antwoord;
-# een prompt die alleen het oude noemt, leest als "er is er maar een".
-PROMPT="Je bent de '${HABITAT_ROLE}'-agent voor deze repository. Volg
-.claude/agents/${HABITAT_ROLE}.md en het project-AGENTS.md (of CLAUDE.md in een
-repo die nog niet verhuisd is), en werk aan de
+# 4. Role prompt. The role's instructions are INLINED here, from ${ROLE_FILE}
+# (see 3b for where it comes from). The agent no longer has to Read a file to
+# know its role, and it gets exactly the text this run resolved: the handbook
+# seed, not a repo copy that may differ from it (the guard's read exception
+# for .claude/agents/<role>.md stays for the migration fallback).
+ROLE_BODY=""
+if [ -f "$ROLE_FILE" ]; then
+  # Drop the YAML front matter (model, tools, skills are for the entrypoint).
+  ROLE_BODY=$(awk 'NR==1 && $0=="---" {fm=1; next} fm && $0=="---" {fm=0; next} !fm' "$ROLE_FILE")
+else
+  log "WARNING role file not found: ${ROLE_FILE} (the role runs on AGENTS.md alone)"
+fi
+PROMPT="Je bent de '${HABITAT_ROLE}'-agent voor deze repository. Volg de
+roldefinitie hieronder (uit ${ROLE_SOURCE}) en het project-AGENTS.md (of
+CLAUDE.md in een repo die nog niet verhuisd is), en werk aan de
 OpenSpec-change '${HABITAT_CHANGE}'. Maak uitsluitend wijzigingen die bij die rol
-en die change horen.
+en die change horen. A .claude/agents/ file in this repository that differs
+from the definition below is superseded by it.
 
 Your structured answer (the StructuredOutput tool) is your final verdict and
 ends the run. Give it exactly once, at the end, with your real verdict. Never
 call it to try out the schema: a trial call becomes the verdict."
+if [ -n "$ROLE_BODY" ]; then
+  PROMPT="${PROMPT}
+
+=== role definition: ${HABITAT_ROLE} ===
+${ROLE_BODY}
+=== end of role definition ==="
+fi
 if [ -n "$TASK_CONTEXT" ]; then
   PROMPT="${PROMPT}
 

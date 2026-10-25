@@ -23,12 +23,16 @@ BRANCH="habitat/${ROLE}/${CHANGE}-${RUN_ID}"
 KUBECTL=${KUBECTL:-kubectl}
 HERE=$(cd "$(dirname "$0")" && pwd)
 
-export HABITAT_TASK_REF
+export HABITAT_TASK_REF HABITAT_HANDBOOK_REF
 export JOB_NAME HABITAT_ROLE HABITAT_CHANGE HABITAT_REPO HABITAT_RUN_ID \
        HABITAT_BASE_BRANCH HABITAT_MAX_BUDGET_USD ACTIVE_DEADLINE_SECONDS PAT_SECRET WORKER_IMAGE
 HABITAT_ROLE=$ROLE HABITAT_CHANGE=$CHANGE HABITAT_REPO=$REPO HABITAT_RUN_ID=$RUN_ID
 HABITAT_BASE_BRANCH=${HABITAT_BASE_BRANCH:-}
 HABITAT_TASK_REF=${HABITAT_TASK_REF:-}
+# The handbook commit the role definitions come from (roles-from-handbook,
+# 2026-10-25). Set by the caller (ratatoskr's factory.yml); empty keeps the
+# migration fallback, the target repo's own .claude/agents/<role>.md.
+HABITAT_HANDBOOK_REF=${HABITAT_HANDBOOK_REF:-}
 HABITAT_MAX_BUDGET_USD=${HABITAT_MAX_BUDGET_USD:-5.00}
 # The builder may get its own budget (builder-budget, 2026-10-24): it does the
 # work, the other roles read and judge. convergence builders hit the shared $5
@@ -63,7 +67,7 @@ JOB_NAME="habitat-${ROLE}-${repo_short}-${slug:0:20}-$(date +%s)"
 JOB_NAME=${JOB_NAME:0:63}
 
 VARS='$JOB_NAME $HABITAT_ROLE $HABITAT_CHANGE $HABITAT_REPO $HABITAT_RUN_ID $HABITAT_BASE_BRANCH'
-VARS+=' $HABITAT_MAX_BUDGET_USD $HABITAT_TASK_REF $ACTIVE_DEADLINE_SECONDS $PAT_SECRET $WORKER_IMAGE'
+VARS+=' $HABITAT_MAX_BUDGET_USD $HABITAT_TASK_REF $HABITAT_HANDBOOK_REF $ACTIVE_DEADLINE_SECONDS $PAT_SECRET $WORKER_IMAGE'
 VARS+=' $OAUTH_SECRET $CREDS_SECRET $API_KEY_SECRET'
 
 # Auth van de worker is CLAUDE_CODE_OAUTH_TOKEN (setup-token, 1 jaar; zie

@@ -21,6 +21,8 @@ jobs:
         run: python3 report/test_habitat_report.py
       - name: tool-guard-tests
         run: bash worker/hooks/test-pretooluse-guard.sh
+      - name: role-seed-tests
+        run: bash worker/test-role-seed.sh
       - name: yaml-syntax
         run: |
           python3 - <<'PY'

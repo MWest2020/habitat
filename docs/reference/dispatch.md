@@ -1,6 +1,6 @@
 ---
 status: draft
-last_reviewed: 2026-10-24
+last_reviewed: 2026-10-25
 ---
 
 # Dispatch-contract
@@ -147,6 +147,36 @@ could not fit its answer into the role's schema) is dispatched once more by
 `chain.sh`; only if that fails too does the chain stop. On 2026-10-24 three
 chains stopped on it, one of them after architect, builder and reviewer had
 passed.
+
+## Roles come from the handbook (roles-from-handbook)
+
+Mark, 2026-10-25: *"the cleanest is all looks at the handbook and there is where
+we have or index our agents and skills, consumed by habitat for whatever
+project"*. A run's role file is the handbook's
+`docs/agents/seeds/<role>.md` at a pinned commit:
+
+| Env | Meaning |
+|---|---|
+| `HABITAT_HANDBOOK_REF` | the handbook commit (7-40 hex). Set by the caller (ratatoskr's `factory.yml`); `dispatch.sh` passes it into the Job. |
+| `HABITAT_HANDBOOK_BASE` | optional, default `https://raw.githubusercontent.com/MWest2020/handbook`; tests use a `file://` tree. |
+
+The worker fetches `<base>/<ref>/docs/agents/seeds/<role>.md`
+(`worker/role-seed.sh`, python3 urllib, the image has no curl) to
+`/work/role/<role>.md`, **outside** the work tree, so the entrypoint's
+`git add -A` never commits it. Model and skills come from its front matter as
+before; its body is inlined into the role's prompt.
+
+- **Ref set:** a ref that is not a SHA, a role name that is not a slug, a 404,
+  or a file without front matter stops the run (exit 1, `fail closed` in the
+  log). It never falls back to a repo copy.
+- **Ref unset:** the target repo's own `.claude/agents/<role>.md`, with a
+  `WARNING` in the log. A migration fallback only; once every caller sets the
+  ref, repo copies go.
+- A role the handbook has no seed for cannot run with the ref set. On
+  2026-10-25 the handbook seeds are builder, reviewer and security; **architect
+  has none yet**, so a chain with an architect needs that seed first.
+
+Tests: `bash worker/test-role-seed.sh` (CI step `role-seed-tests`).
 
 ## Branch- en run-report-conventie
 
