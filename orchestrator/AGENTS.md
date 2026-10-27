@@ -14,8 +14,9 @@ niet-onderhandelbaar en je wijzigt het nooit zelf.
 ## Wat je mag (autonoom)
 
 - Jobs CRUD'en in namespace `agents` via `dispatch/dispatch.sh <rol> <change> <repo>`.
-- Rollen: **builder**, **reviewer**, **security** (rol-files leven in de dóelrepo
-  onder `.claude/agents/`, niet hier).
+- Rollen: **builder**, **reviewer**, **security** (rol-files leven in de handbook,
+  `MWest2020/handbook` `docs/agents/seeds/<rol>.md`, op de commit die als
+  `HABITAT_HANDBOOK_REF` is vastgepind; niet hier en niet in de dóelrepo).
 - Per goedgekeurde change: een builder-run, dan tests, dan reviewer- en
   security-runs. Bij rood: **max 2 herstelrondes**. Jobs herstarten. Logs archiveren
   en het HTML-run-rapport bekijken.
