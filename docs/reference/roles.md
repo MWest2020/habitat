@@ -16,7 +16,8 @@ pushen. De output is verplicht JSON volgens `worker/schemas/<rol>.json`;
 role definitions come from the handbook (`docs/agents/seeds/<role>.md` at the
 pinned `HABITAT_HANDBOOK_REF`, see [dispatch](dispatch.md#roles-come-from-the-handbook-roles-from-handbook));
 the target repo's `.claude/agents/<rol>.md` is only a migration fallback when no
-ref is set. Skills: `.claude/skills/` (sjablonen: `templates/agents/`, `templates/skills/`).
+ref is set; since 2026-10-27 the MWest2020 repos carry no such copies any more
+(Mark: "haal de kopieën maar weg"). Skills: `.claude/skills/` (sjablonen: `templates/agents/`, `templates/skills/`).
 
 ## Overzicht
 
