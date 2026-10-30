@@ -1,0 +1,18 @@
+# Roadmap, as data. Drafted 2026-10-30 by the odin coding session from this
+# repository's own docs and merged work, for the overview at westerweel.work/nu/.
+# Mark reviews and corrects it; until then it is a proposal. An item is "done"
+# only with evidence (a PR, issue or doc); everything else is "open".
+# Schema: project, goal, current (a phase id), phases [id, name, summary], and
+# done_means for the current phase [item, status done|open, evidence].
+project: habitat
+goal: "A minimal platform on which Claude Code agents work on repositories autonomously, inside explicit, non-negotiable limits: work distribution, execution, isolation, escalation, audit."
+current: roles
+phases:
+  - {id: cage, name: "The cage", summary: "one dispatch, Kubernetes Jobs, git as the hand-over, a guard on every tool"}
+  - {id: chains, name: "Role chains", summary: "architect, builder, reviewer, security with real tests and budgets"}
+  - {id: roles, name: "Roles from the handbook", summary: "every role and skill from one canonical source, for every project"}
+done_means:
+  - {item: "The worker reads each role's seed from the handbook at a pinned commit", status: done, evidence: "https://github.com/MWest2020/habitat/pull/44"}
+  - {item: "No per-repository role copies left", status: done, evidence: "https://github.com/MWest2020/habitat/pull/45"}
+  - {item: "An execution role for the designer (ontwerper)", status: open, evidence: "https://github.com/MWest2020/handbook/blob/main/docs/agents/ontwerper.md"}
+  - {item: "The reviewer runs the project's tests itself", status: open, evidence: "https://github.com/MWest2020/habitat/blob/main/worker/settings/reviewer.json"}
