@@ -178,6 +178,27 @@ before; its body is inlined into the role's prompt.
 
 Tests: `bash worker/test-role-seed.sh` (CI step `role-seed-tests`).
 
+## Push met retry (worker-push-retry)
+
+Stap 7 van `worker/entrypoint.sh` pusht de rol-branch via `push_with_retry`
+(`worker/push-retry.sh`, sourced zoals `role-seed.sh`): tot 4 pogingen, met 5,
+15 en 45 seconden ertussen, elke mislukte poging gelogd met zijn exit-code.
+Alleen als alle pogingen mislukken faalt de push — en daarmee de Job — nog
+zoals voorheen. De branch is run-unieke (bevat `HABITAT_RUN_ID`), dus een
+herhaalde push is nooit een force push en overschrijft nooit een andere run.
+
+Op 2026-11-04 passeerde een wordsworth-reviewer architect, builder en reviewer
+(PASS, geen findings); de keten stopte toch, op een eenmalige GitHub-serverfout
+bij `git push` onder `set -e`. Dat kostte een rebuild van de hele keten voor een
+fout die niets met de rol-uitkomst te maken had.
+
+**Deploy:** de worker draait vanaf een gepind image (`worker_image` in
+ratatoskr's `agents/factory.yml`). De fix werkt pas na een nieuwe
+`worker-image.yml`-build op de merge-commit en een bump van die pin.
+
+Tests: `bash worker/test-push-retry.sh` (CI draait elk `worker/test-*.sh`, zie
+hierboven).
+
 ## Branch- en run-report-conventie
 
 - De worker pusht een **run-unieke** branch

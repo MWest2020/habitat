@@ -321,9 +321,13 @@ done < <(git diff --cached --name-only --diff-filter=ACM)
 git add -A
 git commit -q -m "habitat: ${HABITAT_ROLE} run ${HABITAT_RUN_ID} (change ${HABITAT_CHANGE})" \
   || log "commit: niets gewijzigd"
-# De branch is uniek per run (bevat run-id), dus de push is altijd een nieuwe
-# branch: geen collision, geen force, geen eerdere run overschreven.
-git push -u origin "$BRANCH"
+# De branch is uniek per run (bevat run-id), dus een retried push is altijd een
+# nieuwe branch: geen collision, geen force, geen eerdere run overschreven. Een
+# transient GitHub-fout op de eerste poging mag een geslaagde rol niet alsnog
+# laten falen (worker-push-retry, 2026-11-04).
+# shellcheck source=push-retry.sh
+. /opt/habitat/push-retry.sh
+push_with_retry "$BRANCH"
 log "branch gepusht: ${BRANCH}"
 
 # Exit weerspiegelt de run-uitkomst (Job-status)
