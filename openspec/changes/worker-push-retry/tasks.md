@@ -8,7 +8,7 @@
 ## 2. Test
 
 - [ ] `worker/test-push-retry.sh`: a fake `git` on `PATH` driven by a counter file. Cases: succeeds at once (1 call, exit 0); fails twice then succeeds (3 calls, exit 0, two failures logged); always fails (4 calls, non-zero exit). `PUSH_WAITS="0 0 0"` so the test does not sleep.
-- [ ] `.github/workflows/verify.yml` runs `bash worker/test-push-retry.sh` next to `test-role-seed.sh`.
+- [x] CI runs `worker/test-push-retry.sh` without a workflow change: `verify.yml` runs every `worker/test-*.sh` (done outside the build; the builder's token may not edit workflows).
 
 ## 3. Docs
 
