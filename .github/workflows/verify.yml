@@ -21,8 +21,12 @@ jobs:
         run: python3 report/test_habitat_report.py
       - name: tool-guard-tests
         run: bash worker/hooks/test-pretooluse-guard.sh
-      - name: role-seed-tests
-        run: bash worker/test-role-seed.sh
+      # Every worker/test-*.sh runs here, so a new worker test needs no workflow
+      # change: the factory's builder token may not edit workflows (2026-11-05,
+      # worker-push-retry was refused on exactly that).
+      - name: worker-tests
+        run: |
+          for t in worker/test-*.sh; do echo "== $t"; bash "$t" || exit 1; done
       - name: yaml-syntax
         run: |
           python3 - <<'PY'
