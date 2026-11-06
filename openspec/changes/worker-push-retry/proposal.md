@@ -25,8 +25,8 @@ whole chain (run file `wordsworth-originals-ingest-write-1793782969.log`).
   as today. A push that succeeds on a later attempt is logged as such.
 - The branch is unique per run (it carries the run id), so a repeated push is
   never a force push and never overwrites another run.
-- A test (`worker/test-push-retry.sh`, run in `verify.yml` next to
-  `test-role-seed.sh`) uses a fake `git` on `PATH`: fails twice then succeeds →
+- A test (`worker/test-push-retry.sh`; CI already runs every `worker/test-*.sh`,
+  so `verify.yml` is not touched: the builder's token may not edit workflows) uses a fake `git` on `PATH`: fails twice then succeeds →
   success after 3 calls; always fails → failure after 4 calls; succeeds at once
   → 1 call. The waits are injectable so the test does not sleep.
 
