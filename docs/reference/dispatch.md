@@ -243,6 +243,31 @@ security en geeft de run-unieke builder-branch automatisch door aan reviewer en
 security (`HABITAT_BASE_BRANCH`). Zelfde env als `dispatch.sh` (`WORKER_IMAGE`
 verplicht).
 
+### Playtester (add-playtester-role)
+
+Tussen reviewer en security draait de `playtester` als de doelrepo meedoet:
+
+```yaml
+# .factory/playtest.yml in de doelrepo
+paths: [web/**]          # alleen een change die hier iets raakt, wordt bespeeld
+serve_dir: web           # of serve_cmd: "npm run preview -- --port {port}"
+viewports: [390x844, 1280x800]
+checks: |                # vrije tekst voor de rol: wat moet je proberen
+  Open een spel en speel één ronde.
+```
+
+`playtest_gate.py <repo> <builder-branch>` leest dat bestand en de diff via `gh`
+en beslist (exit 0 = draaien). In de kooi serveert `playtest-shoot` de app op
+127.0.0.1 en maakt screenshots; verzoeken naar andere hosts worden geblokkeerd
+en gemeld. De kooi heeft geen netwerk: een `serve_cmd` moet zonder downloads
+draaien (statische bestanden of al geïnstalleerde deps).
+
+Een FAIL stopt de keten zoals bij elke rol. Een reparatieronde (builder opnieuw
+met de bevindingen van de playtester) is de volgende stap; die bestaat nog niet.
+De rol komt uit de handbook-seed `docs/agents/seeds/playtester.md`; zolang
+`handbook_ref` daar niet naar wijst, faalt de rol dicht. Zet daarom pas een
+`.factory/playtest.yml` in een repo als ratatoskr's `handbook_ref` de seed bevat.
+
 ## Uitkomst
 
 `dispatch.sh` wacht op een **terminale** `Job.status.conditions` (`Complete`

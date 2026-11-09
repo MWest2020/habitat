@@ -29,6 +29,18 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends git ca-certificates jq python3 shellcheck \
  && rm -rf /var/lib/apt/lists/*
 
+# Playtester (change add-playtester-role): Python Playwright + de Chromium headless
+# shell, gepind, zodat de rol in de kooi (zonder netwerk) een app kan openen en
+# screenshots maken. De browser staat buiten $HOME, leesbaar voor de worker-user.
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/habitat/ms-playwright
+RUN uv venv -q --python /usr/bin/python3 /opt/habitat/playtest-venv \
+ && uv pip install -q --python /opt/habitat/playtest-venv/bin/python playwright==1.56.0 \
+ && /opt/habitat/playtest-venv/bin/playwright install --with-deps --only-shell chromium \
+ && rm -rf /var/lib/apt/lists/* /root/.cache \
+ && printf '#!/bin/sh\nexec /opt/habitat/playtest-venv/bin/python /opt/habitat/playtest/shoot.py "$@"\n' \
+      > /usr/local/bin/playtest-shoot \
+ && chmod 755 /usr/local/bin/playtest-shoot
+
 # Claude Code headless (gepinde versie; ≥2.1.220 voor --json-schema/dontAsk/--setting-sources)
 # + de OpenSpec-CLI: taken van een change eisen `openspec validate --strict`, en
 #   zonder de CLI kan een rol dat niet zelf bewijzen (waargenomen 2026-09-04:
@@ -62,6 +74,7 @@ COPY worker/hooks/    /opt/habitat/hooks/
 COPY worker/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY worker/role-seed.sh /opt/habitat/role-seed.sh
 COPY worker/push-retry.sh /opt/habitat/push-retry.sh
+COPY worker/playtest/ /opt/habitat/playtest/
 RUN chmod +x /usr/local/bin/entrypoint.sh /opt/habitat/role-seed.sh /opt/habitat/push-retry.sh /opt/habitat/hooks/*.sh \
  && useradd -m -u 10001 worker \
  && mkdir -p /work && chown worker:worker /work

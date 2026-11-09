@@ -27,6 +27,13 @@ ref is set; since 2026-10-27 the MWest2020 repos carry no such copies any more
 | `builder` | implementeert de change binnen het plan, levert bewijs | ja | `verify` |
 | `reviewer` | adversarial review van de builder-branch in verse context | nee | `review-checklist` |
 | `security` | security-review van de diff (afgeleid van anthropics/claude-code-security-review) | nee | `security-review` |
+| `playtester` | opent de app in headless Chromium, speelt wat de change zegt, leest de screenshots (add-playtester-role) | nee | — |
+
+De playtester draait alleen in een repo met `.factory/playtest.yml` en alleen als
+de change een van de `paths` raakt (`dispatch/playtest_gate.py`). Allowlist: die
+van de reviewer plus `playtest-shoot`; schema: dat van de reviewer plus
+`screenshots`. Zijn work tree wordt na de run teruggezet; tot 12 screenshots gaan
+mee als `playtest-*.jpg` in de artefacten.
 
 ## Allowlist en deny per rol
 

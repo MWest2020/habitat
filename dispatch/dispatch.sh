@@ -7,10 +7,10 @@
 #        ACTIVE_DEADLINE_SECONDS, PAT_SECRET, HABITAT_LOGDIR
 set -euo pipefail
 
-ROLE=${1:?rol (architect|builder|reviewer|security)}
+ROLE=${1:?rol (architect|builder|reviewer|security|playtester)}
 case "$ROLE" in
-  architect|builder|reviewer|security) ;;
-  *) echo "[dispatch] onbekende rol '$ROLE' (architect|builder|reviewer|security)" >&2; exit 64 ;;
+  architect|builder|reviewer|security|playtester) ;;
+  *) echo "[dispatch] onbekende rol '$ROLE' (architect|builder|reviewer|security|playtester)" >&2; exit 64 ;;
 esac
 CHANGE=${2:?change-naam}
 REPO=${3:?doelrepo (owner/repo of URL)}

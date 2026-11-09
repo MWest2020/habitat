@@ -218,6 +218,8 @@ def emit(hab: Path, run_id: str) -> None:
     import base64
     names = ["audit.jsonl", "run-report.json",
              f"run-report-{run_id}.html", f"run-output-{run_id}.md"]
+    # The playtester's screenshots (change add-playtester-role).
+    names += sorted(p.name for p in hab.glob("playtest-*.jpg"))[:12]
     print(EMIT_BEGIN)
     for n in names:
         f = hab / n
