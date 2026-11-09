@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT
-# Draai de volle rol-keten architect -> builder -> reviewer -> security en geef
+# Draai de volle rol-keten architect -> builder -> reviewer -> [playtester] -> security en geef
 # de (run-unieke) builder-branch door aan reviewer en security via
 # HABITAT_BASE_BRANCH. Zo lezen die aantoonbaar de juiste builder-run, ook na
 # een retry.
@@ -56,6 +56,12 @@ builder_branch=$REPLY
 # reviewer + security bouwen op de builder-branch
 export HABITAT_BASE_BRANCH="$builder_branch"
 run_role reviewer
+# The playtester (change add-playtester-role) opens the app and looks at it, but
+# only in a repository that opts in with .factory/playtest.yml and only when the
+# change touches one of its paths. A FAIL stops the chain like any role.
+if python3 "$HERE/playtest_gate.py" "$REPO" "$builder_branch"; then
+  run_role playtester
+fi
 run_role security
 unset HABITAT_BASE_BRANCH
 

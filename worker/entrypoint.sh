@@ -20,8 +20,8 @@ export GIT_PAT
 # subscription-login over ("Not logged in", lokaal bewezen 2026-07-29) en habitat
 # is sub-first. Determinisme komt van dontAsk + expliciete settings + gepind image.
 case "$HABITAT_ROLE" in
-  architect|builder|reviewer|security) ;;
-  *) fail "onbekende rol '${HABITAT_ROLE}' (architect|builder|reviewer|security)" ;;
+  architect|builder|reviewer|security|playtester) ;;
+  *) fail "onbekende rol '${HABITAT_ROLE}' (architect|builder|reviewer|security|playtester)" ;;
 esac
 ROLE_SETTINGS="/opt/habitat/settings/${HABITAT_ROLE}.json"
 ROLE_SCHEMA="/opt/habitat/schemas/${HABITAT_ROLE}.json"
@@ -236,6 +236,13 @@ if [ "$HABITAT_ROLE" = "architect" ]; then
 fi
 
 # 5. Verdict uit de JSON (defensief), niet uit de exit-code
+# The playtester only looks (change add-playtester-role); whatever serving the
+# app left in the work tree (a build directory, a cache) is not its result.
+if [ "$HABITAT_ROLE" = "playtester" ]; then
+  git reset -q --hard "$BASE_REF"
+  git clean -fdq
+fi
+
 VERDICT="error"; COST=""; TURNS=""; SUBTYPE=""; ROLE_VERDICT=""
 if jq -e . "$OUT" >/dev/null 2>&1; then
   # let op: `.is_error // true` is fout — jq behandelt false als leeg. Expliciet:
@@ -298,6 +305,12 @@ NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 # KUBECTL, logs wel.
 ARTIFACTS=/work/artifacts
 mkdir -p "$ARTIFACTS"
+# The playtester's screenshots travel with the other artifacts (at most 12).
+if [ -d /work/playtest ]; then
+  find /work/playtest -maxdepth 1 -name '*.jpg' | sort | head -12 | while IFS= read -r f; do
+    cp "$f" "$ARTIFACTS/playtest-$(basename "$f")"
+  done
+fi
 python3 /opt/habitat/report/habitat_report.py \
   --repo-dir . --artifact-dir "$ARTIFACTS" --emit-stdout \
   --role "$HABITAT_ROLE" --change "$HABITAT_CHANGE" \
