@@ -131,7 +131,7 @@ elk gevonden geheim.
 3. **Container + Cilium** — de buitenste grens: non-root pod zonder
    capabilities, per rol een eigen ServiceAccount zonder token of
    RBAC-rechten (`role-architect`/`role-builder`/`role-reviewer`/
-   `role-security`, `automountServiceAccountToken: false`; `cage/rbac.yaml`),
+   `role-security`/`role-playtester`, `automountServiceAccountToken: false`; `cage/rbac.yaml`),
    plus de Cilium-egress-allowlist als netwerkgrens.
 
 ## Netwerk: begrensd, niet geïsoleerd

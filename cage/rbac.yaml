@@ -34,6 +34,13 @@ automountServiceAccountToken: false
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  name: role-playtester
+  namespace: agents
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
   name: orchestrator
   namespace: agents
 ---
