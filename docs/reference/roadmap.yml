@@ -4,6 +4,8 @@
 # only with evidence (a PR, issue or doc); everything else is "open".
 # Schema: project, goal, current (a phase id), phases [id, name, summary], and
 # done_means for the current phase [item, status done|open, evidence].
+# Optional `nl:` (goal, phase, next): the Dutch text for westerweel.work/nu/,
+# written in the first person, without issue numbers, names or client names.
 project: habitat
 goal: "A minimal platform on which Claude Code agents work on repositories autonomously, inside explicit, non-negotiable limits: work distribution, execution, isolation, escalation, audit."
 current: roles
@@ -16,3 +18,9 @@ done_means:
   - {item: "No per-repository role copies left", status: done, evidence: "https://github.com/MWest2020/habitat/pull/45"}
   - {item: "An execution role for the designer (ontwerper)", status: open, evidence: "https://github.com/MWest2020/handbook/blob/main/docs/agents/ontwerper.md"}
   - {item: "The reviewer runs the project's tests itself", status: open, evidence: "https://github.com/MWest2020/habitat/blob/main/worker/settings/reviewer.json"}
+nl:
+  goal: "Een minimaal platform waarop Claude Code-agents zelfstandig aan repositories werken, binnen expliciete grenzen waarover niet te onderhandelen valt: werkverdeling, uitvoering, isolatie, escalatie en audit."
+  phase: "Rollen uit het handboek"
+  next:
+    - "Een uitvoerende rol voor de ontwerper"
+    - "De reviewer draait zelf de tests van het project"
