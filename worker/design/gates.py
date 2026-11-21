@@ -9,7 +9,6 @@ on the 75 % keyline grid).
 """
 import math
 import re
-import xml.etree.ElementTree as ET
 
 import png
 
@@ -60,43 +59,6 @@ def tokens(tok, where):
     except (KeyError, TypeError, ValueError) as exc:
         out.append(f"{where}: tokens incomplete or malformed ({exc!r})")
     return out
-
-
-SVG_NS = "{http://www.w3.org/2000/svg}"
-BANNED = {"image", "script", "foreignObject", "text", "tspan", "style"}
-
-
-def svg(path, rel):
-    """No external refs, no fonts or text, no inline styles; returns (findings, ids)."""
-    with open(path, encoding="utf-8", errors="replace") as fh:
-        raw = fh.read()
-    if re.search(r"<!(DOCTYPE|ENTITY)", raw):
-        return [f"{rel}: DOCTYPE/ENTITY declarations are not allowed"], set()
-    for pat in (r"@import", r"@font-face", r"url\(\s*['\"]?(https?:|data:|//)"):
-        if re.search(pat, raw, re.I):
-            return [f"{rel}: external reference ({pat})"], set()
-    try:
-        root = ET.fromstring(raw)
-    except ET.ParseError as exc:
-        return [f"{rel}: not well-formed XML ({exc})"], set()
-    out, ids = [], set()
-    if root.tag != SVG_NS + "svg" or "viewBox" not in root.attrib:
-        out.append(f"{rel}: root must be <svg> with a viewBox")
-    for el in root.iter():
-        tag = el.tag.split("}")[-1]
-        if tag in BANNED:
-            out.append(f"{rel}: <{tag}> not allowed (text as paths, no images/styles)")
-        for k, v in el.attrib.items():
-            name = k.split("}")[-1]
-            if name == "href" and not v.startswith("#"):
-                out.append(f"{rel}: external href {v[:60]!r}")
-            if name == "style":
-                out.append(f"{rel}: inline style attribute (strict CSP: use attributes)")
-            if name == "id":
-                if v in ids:
-                    out.append(f"{rel}: duplicate id {v!r}")
-                ids.add(v)
-    return out, ids
 
 
 def png_spec(path, rel, w, h, alpha):

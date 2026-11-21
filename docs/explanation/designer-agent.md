@@ -71,10 +71,18 @@ and none checks its own delivery. The parts are there and they are open:
    OFL fonts baked in. resvg would render the same with fewer dependencies, but
    it is a downloaded binary where Debian already packages librsvg.
 3. **Gates in habitat, not in the prompt:** `design-check`, standard library
-   only, run as a Stop hook and again by the entrypoint. A delivery that fails
-   a gate cannot pass, whatever the agent says.
+   only, run as a Stop hook and again by the entrypoint after the agent has
+   exited: from the image, with `python3 -I` (no user site or `PYTHONPATH` the
+   agent could plant), without `GIT_PAT` and without `$HOME`. A delivery that
+   fails a gate fails the run, whatever verdict the agent gives. That holds for
+   the attacks we know (independent review, 2026-11-21); it is a gate, not a
+   proof.
 4. **Rights by construction:** SVG written by the agent, OFL fonts, no image
-   model, no network in the run, `LICENSES.md` checked.
+   model, no downloads: the role has no network tools and no package runners,
+   and everything it uses is baked into the image. The pod itself is not
+   offline: its egress (shared with the entrypoint, which clones and pushes)
+   still allows Anthropic, GitHub, npm and PyPI on 443. Narrowing egress per
+   role would not help here, since clone and push need GitHub in the same pod.
 
 The clever pitfall: an image model would give prettier first sketches. It would
 also give a logo nobody can prove is clean, for a children's app whose promise
@@ -89,7 +97,8 @@ is trust.
 | layout | every required file of the delivery exists |
 | directions | 2-3 `## Direction <id>` sections plus `## Recommendation`, each with `directions/<id>/mark.svg`, `tokens.json`, `preview.png` |
 | contrast | per palette: ink, ink-soft on base and on-brand on brand 4.5:1; each group accent 3:1 on base; group text 4.5:1 on its tint; fonts from the OFL set; type scale 16 px or more |
-| svg | well-formed, `viewBox`, no DOCTYPE/entities, no `<image>`, `<script>`, `<foreignObject>`, `<text>`, `<style>`, `style=`, external `href`, `@import`, `@font-face`; ids unique across `logo/` and `adaptive/` |
+| svg | an allowlist on parsed values: static SVG elements (shapes, paths, groups, gradients, clip paths, masks, `use`/`symbol`) and presentation attributes only; no DOCTYPE/entities, processing instructions, `on*` attributes, animation, scripts, foreign content, images, text or styles; `href` only `#id`, `url()` only `url(#id)`; ids unique across `logo/` and `adaptive/` |
+| files | no symlinks under `design/brand/`; SVGs only as `*.svg` (no `.SVG`, no `.svgz`) |
 | png-sizes | exact sizes; Play icon 32-bit RGBA; App Store icon, feature graphic and screenshot frames without alpha |
 | safe-zone | adaptive foreground and monochrome inside the 66/108 circle, background opaque, monochrome one colour; Play icon opaque with its key shape on the 75 % keyline with a 30 % corner radius |
 | legibility-24px | the 96 px mark loses under 10 % of its ink to a 3 px morphological opening (no detail thinner than about 0.75 px at 24 px), and the 24 px render is not empty |

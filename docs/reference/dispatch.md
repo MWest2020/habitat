@@ -17,7 +17,7 @@ dispatch.sh <rol> <change> <repo> [run-id]
 
 | Argument | Verplicht | Betekenis |
 |---|---|---|
-| `<rol>` | ja | `architect` \| `builder` \| `reviewer` \| `security` \| `playtester` \| `designer` |
+| `<rol>` | ja | `architect` \| `builder` \| `reviewer` \| `security` \| `playtester` \| `designer` (los: [`designer.sh`](designer.md#dispatch)) |
 | `<change>` | ja | change-naam (map onder `openspec/changes/`) |
 | `<repo>` | ja | doelrepo (`owner/repo` of URL) |
 | `[run-id]` | nee | default `<rol>-<change-geslugd>-<YYYYmmdd-HHMMSS>` |
@@ -267,11 +267,6 @@ met de bevindingen van de playtester) is de volgende stap; die bestaat nog niet.
 De rol komt uit de handbook-seed `docs/agents/seeds/playtester.md`; zolang
 `handbook_ref` daar niet naar wijst, faalt de rol dicht. Zet daarom pas een
 `.factory/playtest.yml` in een repo als ratatoskr's `handbook_ref` de seed bevat.
-
-## Designer (add-designer-role)
-
-`dispatch/designer.sh <owner/repo> <brief-pad> [label]`: één designer-run plus
-een draft PR. Zie [designer](designer.md#dispatch).
 
 ## Uitkomst
 

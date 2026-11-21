@@ -1,4 +1,4 @@
 #!/bin/sh
 # SPDX-License-Identifier: MIT
 # design-check (change add-designer-role): the delivery gate; standard library only.
-exec /usr/bin/python3 /opt/habitat/design/check.py "$@"
+exec /usr/bin/python3 -I /opt/habitat/design/check.py "$@"

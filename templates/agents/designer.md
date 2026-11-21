@@ -18,9 +18,13 @@ Your task is the brief.
   Nothing may resemble an existing brand, logo or character. If an idea looks
   like a known mark, drop it.
 - **Fonts: only the OFL fonts in the image** (`design-kit fonts`). Text in logos,
-  icons and store art is converted to paths (`design-kit text2path`). No web
-  fonts, no `<text>`, no `<image>`, no `style` attributes or `<style>` (strict
-  CSP), no external `href`. Give every `id` a file prefix (`mark-`, `fg-`...).
+  icons and store art is converted to paths (`design-kit text2path`).
+- **Plain static SVG only:** `svg`, `g`, `defs`, `symbol`, `use`, `title`,
+  `desc`, `path`, `rect`, `circle`, `ellipse`, `line`, `polyline`, `polygon`,
+  gradients and `stop`, `clipPath`, `mask`, with presentation attributes. No
+  `<text>`, `<image>`, `<style>` or `style=` (strict CSP), no animation, no
+  `on*` attributes, `href` and `url()` only to a local `#id`. Give every `id` a
+  file prefix (`mark-`, `fg-`...). Only `design/brand/` may change.
 - **Colour is never the only cue.** Follow the brief's contrast rules: text
   4.5:1, accents 3:1 on the base.
 - No network. The brief and the repository are all your input.
@@ -36,8 +40,10 @@ Your task is the brief.
   `references/` it points to (principles, svg-construction, testing-checklist,
   color, typography). Its logo library is NOT in the image; do not look for it.
 - `playtest-shoot --serve-dir web` shows you the current app, for context.
-- `design-check design/brand` is the gate. The run cannot end until it passes,
-  and the worker runs it again after you.
+- `design-check design/brand` is the gate. While it fails, your first attempt
+  to finish is blocked once; after the run the worker runs it again (with the
+  check that nothing outside `design/brand/` changed) and fails the run if it
+  still fails, whatever verdict you give.
 
 ## How
 1. Read the brief, the files it names (current logo, earlier sketches, style

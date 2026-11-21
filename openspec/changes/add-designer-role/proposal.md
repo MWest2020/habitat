@@ -26,6 +26,12 @@ Research and the choices behind it: `docs/explanation/designer-agent.md`.
   and Play keyline, a legibility heuristic at 24 px, licences listed. It runs as
   the role's Stop hook and once more in the entrypoint: a claimed PASS with a
   failing delivery fails the run.
+- Hardening from the independent review (2026-11-21): the entrypoint runs the
+  gate as `env -u GIT_PAT HOME=/nonexistent design-gate.sh` with `python3 -I`;
+  the SVG gate is an allowlist on parsed values; and, for **every** role, the
+  entrypoint's git reads no global or system config and restores `.git/config`
+  after the run (`worker/git-safe.sh`), so config an agent writes cannot run
+  code while `GIT_PAT` is set.
 - The worker image gets `rsvg-convert` (Debian), a venv with Pillow and
   fontTools (`design-kit`: render, text2path, contrast, fonts), the brief's OFL
   fonts from google/fonts at a pinned commit, and the MIT logo-design skill

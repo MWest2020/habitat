@@ -16,6 +16,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gates  # noqa: E402
 import png  # noqa: E402
+import svggate  # noqa: E402
 
 REQUIRED = [
     "rationale.md", "LICENSES.md", "tokens.json", "tokens.css",
@@ -91,10 +92,10 @@ def run(out):
     found, seen = [], {}
     for root, _dirs, files in os.walk(out):
         for f in sorted(files):
-            if not f.endswith(".svg"):
+            if not f.endswith(".svg") or os.path.islink(os.path.join(root, f)):
                 continue
             rel = os.path.relpath(os.path.join(root, f), out)
-            errs, ids = gates.svg(os.path.join(root, f), rel)
+            errs, ids = svggate.check(os.path.join(root, f), rel)
             found += errs
             if rel.startswith(("logo/", "adaptive/")):
                 for i in ids:
@@ -102,6 +103,7 @@ def run(out):
                         found.append(f"{rel}: id {i!r} also used in {seen[i]}")
                     seen[i] = rel
     res["svg"] = found
+    res["files"] = svggate.files(out)
 
     found = []
     for rel, w, h, alpha in SIZES:

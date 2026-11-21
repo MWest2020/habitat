@@ -28,18 +28,13 @@ ref is set; since 2026-10-27 the MWest2020 repos carry no such copies any more
 | `reviewer` | adversarial review van de builder-branch in verse context | nee | `review-checklist` |
 | `security` | security-review van de diff (afgeleid van anthropics/claude-code-security-review) | nee | `security-review` |
 | `playtester` | opent de app in headless Chromium, speelt wat de change zegt, leest de screenshots (add-playtester-role) | nee | — |
-| `designer` | maakt uit een merkbrief 2-3 richtingen en één gecontroleerde levering onder `design/brand/` (add-designer-role) | ja, alleen `design/brand/` | — (vendored logo-design-methode) |
+| `designer` | maakt uit een merkbrief 2-3 richtingen en één gecontroleerde levering onder `design/brand/` (add-designer-role) | ja, alleen `design/brand/` (afgedwongen) | — ([designer](designer.md)) |
 
 De playtester draait alleen in een repo met `.factory/playtest.yml` en alleen als
 de change een van de `paths` raakt (`dispatch/playtest_gate.py`). Allowlist: die
 van de reviewer plus `playtest-shoot`; schema: dat van de reviewer plus
 `screenshots`. Zijn work tree wordt na de run teruggezet; tot 12 screenshots gaan
 mee als `playtest-*.jpg` in de artefacten.
-
-## Designer
-
-Losse rol buiten de keten; allowlist, gereedschap, gate en schema staan in
-[designer](designer.md).
 
 ## Allowlist en deny per rol
 
@@ -199,11 +194,10 @@ De builder mag testrunners draaien (`make`, `npm test|run`, `uv run`, `pytest`,
 `package.json`-script, een `conftest.py`. Dat is inherent aan bouwen en testen: je
 kunt geen tests draaien zonder repo-code te draaien.
 
-De allowlist is dus **geen sandbox**. Hij houdt tegen wat een agent per ongeluk of
-achteloos doet (`curl`, `kubectl`, `cat .env`), niet wat een vastberaden agent via
-zijn eigen testcode doet. De echte grenzen liggen een laag lager: de container, de
-egress-allowlist, geen `GIT_PAT` in het agentproces, en `git` die geen repo-hooks
-draait (`core.hooksPath=/dev/null`).
+De allowlist is dus **geen sandbox**: hij houdt tegen wat een agent achteloos doet
+(`curl`, `kubectl`, `cat .env`), niet wat hij via eigen testcode doet. De grenzen
+liggen lager: container, egress-allowlist, geen `GIT_PAT` in het agentproces, en
+git in de entrypoint zonder config die de agent kan schrijven (`worker/git-safe.sh`).
 
 Wat er bewust **niet** in staat: `uvx` en `npx`. Die halen een willekeurig pakket
 van internet en voeren het uit — een andere klasse dan "draai de tests van deze

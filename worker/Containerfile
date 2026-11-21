@@ -106,8 +106,9 @@ COPY worker/push-retry.sh /opt/habitat/push-retry.sh
 COPY worker/playtest/ /opt/habitat/playtest/
 COPY worker/design/ /opt/habitat/design/
 COPY worker/design-gate.sh /opt/habitat/design-gate.sh
+COPY worker/git-safe.sh /opt/habitat/git-safe.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /opt/habitat/role-seed.sh /opt/habitat/push-retry.sh /opt/habitat/hooks/*.sh \
- && chmod 755 /opt/habitat/design/bin/* && ln -s /opt/habitat/design/bin/* /usr/local/bin/ \
+ && chmod 755 /opt/habitat/design/bin/* /opt/habitat/design-gate.sh && ln -s /opt/habitat/design/bin/* /usr/local/bin/ \
  && useradd -m -u 10001 worker \
  && mkdir -p /work && chown worker:worker /work
 

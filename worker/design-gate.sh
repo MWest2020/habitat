@@ -1,23 +1,37 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT
-# designer_gate <base-ref>: the designer's post-run gate (change add-designer-role),
-# sourced by entrypoint.sh, run in the work tree after the agent finished.
-#  1. The designer writes only under design/brand/: any other changed or new path
-#     (committed or not) fails the run. Its job is a proposal, not the app.
-#  2. design-check design/brand passes, run from the image (the agent cannot
-#     change the checker), whatever verdict the agent gave.
-# Returns 0 when both hold; logs why not on stderr.
+# design-gate.sh <base-ref>: the designer's post-run gate (change add-designer-role),
+# run by entrypoint.sh in the work tree after the agent finished, as
+# `env -u GIT_PAT HOME=/nonexistent design-gate.sh <base>` (no token, no $HOME).
+#  1. The designer writes only under design/brand/: any other changed, deleted or
+#     new path, committed or not, fails the run. --no-renames, so a move out of
+#     web/ into design/brand/ counts as the deletion it is; NUL-separated, so a
+#     file name with a newline cannot hide a path.
+#  2. design-check design/brand passes, from the image, whatever the agent said.
+# Exit 0 when both hold; says why not on stderr.
 designer_gate() {
-  local base=$1 outside
-  outside=$( { git diff --name-only "$base"; git ls-files --others --exclude-standard; } \
-             | sort -u | grep -v '^design/brand/' || true)
+  local base=$1 f outside=""
+  git rev-parse -q --verify "${base}^{commit}" >/dev/null \
+    || { echo "[habitat] design-gate: base ${base} is not a commit" >&2; return 1; }
+  while IFS= read -r -d '' f; do
+    case "$f" in
+      design/brand/*) ;;
+      *) outside+="  ${f@Q}"$'\n' ;;
+    esac
+  done < <(git diff --name-only --no-renames --no-ext-diff -z "$base" --;
+           git ls-files --others --exclude-standard -z)
   if [ -n "$outside" ]; then
-    printf '[habitat] designer changed paths outside design/brand/:\n%s\n' "$outside" >&2
+    printf '[habitat] designer changed paths outside design/brand/:\n%s' "$outside" >&2
     return 1
   fi
   if ! design-check design/brand >&2; then
     printf '[habitat] design-check: delivery gates failed\n' >&2
     return 1
   fi
-  return 0
 }
+
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  set -uo pipefail
+  [ $# -eq 1 ] || { echo "usage: design-gate.sh <base-ref>" >&2; exit 64; }
+  designer_gate "$1"
+fi

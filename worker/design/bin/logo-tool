@@ -11,4 +11,4 @@ case "${1:-}" in
 esac
 [ -f "$SCRIPTS/$1.py" ] || { echo "logo-tool: no script '$1' in $SCRIPTS" >&2; exit 64; }
 s="$SCRIPTS/$1.py"; shift
-exec /opt/habitat/design-venv/bin/python "$s" "$@"
+exec /opt/habitat/design-venv/bin/python -I "$s" "$@"
