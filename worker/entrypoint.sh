@@ -20,8 +20,8 @@ export GIT_PAT
 # subscription-login over ("Not logged in", lokaal bewezen 2026-07-29) en habitat
 # is sub-first. Determinisme komt van dontAsk + expliciete settings + gepind image.
 case "$HABITAT_ROLE" in
-  architect|builder|reviewer|security|playtester) ;;
-  *) fail "onbekende rol '${HABITAT_ROLE}' (architect|builder|reviewer|security|playtester)" ;;
+  architect|builder|reviewer|security|playtester|designer) ;;
+  *) fail "onbekende rol '${HABITAT_ROLE}' (architect|builder|reviewer|security|playtester|designer)" ;;
 esac
 ROLE_SETTINGS="/opt/habitat/settings/${HABITAT_ROLE}.json"
 ROLE_SCHEMA="/opt/habitat/schemas/${HABITAT_ROLE}.json"
@@ -60,16 +60,11 @@ case "$HABITAT_REPO" in
   *)             REPO_URL="https://github.com/${HABITAT_REPO}.git" ;;
 esac
 
-# 3. Git-auth zonder PAT-lek: credential-helper leest uit env, niet uit URL/reflog
-git config --global credential.helper \
-  '!f() { echo username=x-access-token; echo "password=${GIT_PAT}"; }; f'
-# Repo-gestuurde uitvoering via git uitzetten: hooks en fsmonitor draaien anders
-# ONZE git-aanroepen (add/commit/push) als de agent .git/ heeft weten te schrijven.
-# Tweede laag naast de guard — die dekt de tool-weg, dit dekt git zelf.
-git config --global core.hooksPath /dev/null
-git config --global core.fsmonitor false
-git config --global user.email "habitat-worker@invalid.local"
-git config --global user.name  "Habitat ${HABITAT_ROLE}"
+# 3. Git config only from the environment (helper reads GIT_PAT, no hooks): the
+# agent can write ~/.gitconfig and .git/config, git-safe.sh never trusts them.
+# shellcheck source=git-safe.sh
+. /opt/habitat/git-safe.sh
+git_trusted_env
 
 WORK=/work/repo
 rm -rf "$WORK"
@@ -189,6 +184,7 @@ Aanvullende taak/context (uit ${HABITAT_TASK_REF} in de repo):
 ${TASK_CONTEXT}"
 fi
 
+git_snapshot_config
 OUT=/work/claude-output.json
 log "claude -p (rol=${HABITAT_ROLE}, budget=\$${MAX_BUDGET})"
 set +e
@@ -210,6 +206,7 @@ env -u GIT_PAT claude -p "$PROMPT" \
   > "$OUT" 2> /work/claude-stderr.log
 CLAUDE_EXIT=$?
 set -e
+git_restore_config || fail ".git vervangen tijdens de run; niets gepusht"
 
 # 4b. De agent kan tijdens de run zelf een branch hebben aangemaakt (bv. een
 # change-taak "branch X vanaf de default branch"). Zonder correctie pusht stap 7
@@ -268,6 +265,9 @@ else
   log "geen parseerbare JSON van claude (exit ${CLAUDE_EXIT})"
 fi
 [ "$ARCHITECT_DIRTY" = "1" ] && VERDICT="failed"
+# The designer's own gates (add-designer-role), without the token or $HOME.
+if [ "$HABITAT_ROLE" = "designer" ] && ! env -u GIT_PAT HOME=/nonexistent \
+     /opt/habitat/design-gate.sh "$BASE_REF"; then log "designer-gate: afgekeurd"; VERDICT="failed"; fi
 
 # 5b. Secret-detectie VÓÓR het rapport (reviewer minor): scan de agent-output
 # (bron van run-output.md) en de werkboom; een hit maakt de run failed, zodat

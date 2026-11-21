@@ -1,6 +1,6 @@
 ---
 status: draft
-last_reviewed: 2026-10-25
+last_reviewed: 2026-11-21
 ---
 
 # Dispatch-contract
@@ -17,7 +17,7 @@ dispatch.sh <rol> <change> <repo> [run-id]
 
 | Argument | Verplicht | Betekenis |
 |---|---|---|
-| `<rol>` | ja | `architect` \| `builder` \| `reviewer` \| `security` |
+| `<rol>` | ja | `architect` \| `builder` \| `reviewer` \| `security` \| `playtester` \| `designer` (los: [`designer.sh`](designer.md#dispatch)) |
 | `<change>` | ja | change-naam (map onder `openspec/changes/`) |
 | `<repo>` | ja | doelrepo (`owner/repo` of URL) |
 | `[run-id]` | nee | default `<rol>-<change-geslugd>-<YYYYmmdd-HHMMSS>` |

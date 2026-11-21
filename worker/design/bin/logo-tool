@@ -1,0 +1,14 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# logo-tool <script> [args]: runs one script of the vendored logo-design skill
+# (kaankiziltug/logo-design-skill, MIT) in the design venv. The script name must
+# be a bare name; its library of third-party logos is not in the image.
+SCRIPTS=/opt/habitat/logo-design/scripts
+case "${1:-}" in
+  ""|*[!a-z_]*)
+    echo "usage: logo-tool <script> [args]; scripts: svg_audit preview_sheet concept_sheet export_variants render_png" >&2
+    exit 64 ;;
+esac
+[ -f "$SCRIPTS/$1.py" ] || { echo "logo-tool: no script '$1' in $SCRIPTS" >&2; exit 64; }
+s="$SCRIPTS/$1.py"; shift
+exec /opt/habitat/design-venv/bin/python -I "$s" "$@"

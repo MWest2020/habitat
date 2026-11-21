@@ -1,0 +1,32 @@
+{
+  "type": "object",
+  "required": ["verdict", "summary", "evidence", "directions", "recommended", "deliverables"],
+  "additionalProperties": false,
+  "properties": {
+    "verdict": { "enum": ["PASS", "FAIL"] },
+    "summary": { "type": "string", "minLength": 200 },
+    "evidence": {
+      "type": "string",
+      "minLength": 100,
+      "description": "The last `design-check design/brand` output, verbatim, plus what you saw in the renders you read"
+    },
+    "directions": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "idea"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9-]+$" },
+          "name": { "type": "string" },
+          "idea": { "type": "string", "minLength": 40 }
+        }
+      }
+    },
+    "recommended": { "type": "string", "pattern": "^[A-Za-z0-9-]+$" },
+    "deliverables": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "deviations": { "type": "array", "items": { "type": "string" } }
+  }
+}

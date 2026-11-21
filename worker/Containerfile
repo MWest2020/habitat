@@ -41,6 +41,35 @@ RUN uv venv -q --python /usr/bin/python3 /opt/habitat/playtest-venv \
       > /usr/local/bin/playtest-shoot \
  && chmod 755 /usr/local/bin/playtest-shoot
 
+# Designer (change add-designer-role), alles gepind en zonder netwerk tijdens de run:
+# - rsvg-convert (librsvg, Debian, LGPL-2.1+) voor SVG -> PNG;
+# - een venv met Pillow en fontTools voor design-kit (render, text2path);
+# - de OFL-letters uit de Bazibo-brief, uit google/fonts op een gepinde commit;
+# - de logo-design-skill (kaankiziltug/logo-design-skill, MIT) op een gepinde
+#   commit, ZONDER assets/library/: 1.432 logo's van derden, merken die niet onder
+#   de MIT vallen (TRADEMARKS.md daar). Zie docs/explanation/designer-agent.md.
+ARG FONTS_REF=6c1dbe27dcf7d817d4b62cec033ba77fa8e2a5ec
+ARG LOGO_SKILL_REF=e9eaddc07895575253d6663320354a708f53e955
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends librsvg2-bin \
+ && rm -rf /var/lib/apt/lists/* \
+ && uv venv -q --python /usr/bin/python3 /opt/habitat/design-venv \
+ && uv pip install -q --python /opt/habitat/design-venv/bin/python pillow==12.0.0 fonttools==4.60.1 \
+ && rm -rf /root/.cache \
+ && git init -q /tmp/gf && cd /tmp/gf \
+ && git remote add origin https://github.com/google/fonts.git \
+ && git sparse-checkout set --no-cone /ofl/nunito/ /ofl/fredoka/ /ofl/baloo2/ /ofl/lexend/ /ofl/andika/ \
+ && git fetch -q --depth 1 --filter=blob:none origin "$FONTS_REF" && git checkout -q FETCH_HEAD \
+ && for f in nunito fredoka baloo2 lexend andika; do \
+      mkdir -p "/opt/habitat/fonts/$f" && cp ofl/$f/*.ttf ofl/$f/OFL.txt "/opt/habitat/fonts/$f/"; done \
+ && git init -q /tmp/ls && cd /tmp/ls \
+ && git remote add origin https://github.com/kaankiziltug/logo-design-skill.git \
+ && git sparse-checkout set --no-cone /LICENSE /skills/logo-design/ '!/skills/logo-design/assets/library/' \
+ && git fetch -q --depth 1 --filter=blob:none origin "$LOGO_SKILL_REF" && git checkout -q FETCH_HEAD \
+ && mv skills/logo-design /opt/habitat/logo-design && cp LICENSE /opt/habitat/logo-design/LICENSE \
+ && test ! -e /opt/habitat/logo-design/assets/library \
+ && cd / && rm -rf /tmp/gf /tmp/ls
+
 # Claude Code headless (gepinde versie; ≥2.1.220 voor --json-schema/dontAsk/--setting-sources)
 # + de OpenSpec-CLI: taken van een change eisen `openspec validate --strict`, en
 #   zonder de CLI kan een rol dat niet zelf bewijzen (waargenomen 2026-09-04:
@@ -75,7 +104,11 @@ COPY worker/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY worker/role-seed.sh /opt/habitat/role-seed.sh
 COPY worker/push-retry.sh /opt/habitat/push-retry.sh
 COPY worker/playtest/ /opt/habitat/playtest/
+COPY worker/design/ /opt/habitat/design/
+COPY worker/design-gate.sh /opt/habitat/design-gate.sh
+COPY worker/git-safe.sh /opt/habitat/git-safe.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /opt/habitat/role-seed.sh /opt/habitat/push-retry.sh /opt/habitat/hooks/*.sh \
+ && chmod 755 /opt/habitat/design/bin/* /opt/habitat/design-gate.sh && ln -s /opt/habitat/design/bin/* /usr/local/bin/ \
  && useradd -m -u 10001 worker \
  && mkdir -p /work && chown worker:worker /work
 

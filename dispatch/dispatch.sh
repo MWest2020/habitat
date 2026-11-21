@@ -7,10 +7,10 @@
 #        ACTIVE_DEADLINE_SECONDS, PAT_SECRET, HABITAT_LOGDIR
 set -euo pipefail
 
-ROLE=${1:?rol (architect|builder|reviewer|security|playtester)}
+ROLE=${1:?rol (architect|builder|reviewer|security|playtester|designer)}
 case "$ROLE" in
-  architect|builder|reviewer|security|playtester) ;;
-  *) echo "[dispatch] onbekende rol '$ROLE' (architect|builder|reviewer|security|playtester)" >&2; exit 64 ;;
+  architect|builder|reviewer|security|playtester|designer) ;;
+  *) echo "[dispatch] onbekende rol '$ROLE' (architect|builder|reviewer|security|playtester|designer)" >&2; exit 64 ;;
 esac
 CHANGE=${2:?change-naam}
 REPO=${3:?doelrepo (owner/repo of URL)}
@@ -40,10 +40,10 @@ HABITAT_MAX_BUDGET_USD=${HABITAT_MAX_BUDGET_USD:-5.00}
 if [ "$ROLE" = builder ] && [ -n "${HABITAT_BUILDER_BUDGET_USD:-}" ]; then
   HABITAT_MAX_BUDGET_USD=$HABITAT_BUILDER_BUDGET_USD
 fi
-# The builder gets an hour, the other roles 30 minutes (change builder-deadline,
-# 2026-10-24): since the worker has a test database, the builder runs a repo's
-# DB tests too, and a wordsworth build no longer fit in 30 minutes.
-if [ "$ROLE" = builder ]; then DEFAULT_DEADLINE=3600; else DEFAULT_DEADLINE=1800; fi
+# Builder and designer get an hour, the other roles 30 minutes (builder-deadline,
+# 2026-10-24: a wordsworth build with DB tests no longer fit; add-designer-role:
+# 2-3 directions plus a full export set).
+case "$ROLE" in builder|designer) DEFAULT_DEADLINE=3600 ;; *) DEFAULT_DEADLINE=1800 ;; esac
 ACTIVE_DEADLINE_SECONDS=${ACTIVE_DEADLINE_SECONDS:-$DEFAULT_DEADLINE}
 PAT_SECRET=${PAT_SECRET:-pat-node-01}
 # Who pays (change worker-api-auth, 2026-10-24): the subscription (default), or
