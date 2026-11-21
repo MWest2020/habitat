@@ -14,5 +14,5 @@ phases:
 done_means:
   - {item: "The worker reads each role's seed from the handbook at a pinned commit", status: done, evidence: "https://github.com/MWest2020/habitat/pull/44"}
   - {item: "No per-repository role copies left", status: done, evidence: "https://github.com/MWest2020/habitat/pull/45"}
-  - {item: "An execution role for the designer (ontwerper)", status: open, evidence: "PRPLACEHOLDER"}
+  - {item: "An execution role for the designer (ontwerper)", status: open, evidence: "https://github.com/MWest2020/habitat/pull/56"}
   - {item: "The reviewer runs the project's tests itself", status: open, evidence: "https://github.com/MWest2020/habitat/blob/main/worker/settings/reviewer.json"}
