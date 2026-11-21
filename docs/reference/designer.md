@@ -34,8 +34,11 @@ als `HABITAT_TASK_REF`; de levering staat op de run-branch onder `design/brand/`
   [designer-agent](../explanation/designer-agent.md#what-the-gates-check-and-what-they-cannot).
 - **Git in de entrypoint** (alle rollen, `worker/git-safe.sh`): geen system- of
   global-config, de nodige sleutels uit de omgeving, `.git/config` na de run
-  teruggezet uit een kopie in het geheugen. Zo draait geen fsmonitor, filter of
-  credential-helper die de agent schreef terwijl `GIT_PAT` gezet is.
+  teruggezet uit een kopie in het geheugen, daarna `GIT_DIR`/`GIT_COMMON_DIR`/
+  `GIT_WORK_TREE` vast op deze repo. Een `commondir`, `config.worktree`,
+  `worktrees/` of een filter-, diff- of merge-driver die git nog ziet laat de
+  run falen. Zo draait geen fsmonitor, filter of credential-helper die de agent
+  schreef terwijl `GIT_PAT` gezet is.
 - **Netwerk:** de rol heeft geen netwerk- en geen package-tools; de pod deelt de
   egress van de worker (Anthropic, GitHub, npm, PyPI), want clone en push
   gebeuren in dezelfde pod.

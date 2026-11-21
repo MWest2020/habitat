@@ -27,6 +27,7 @@ class SvgGate(DeliveryCase):
             "foreignObject": "<foreignObject><div/></foreignObject>",
             "event attribute": '<rect width="1" height="1" onclick="alert(1)"/>',
             "entity-encoded url": '<rect width="1" height="1" fill="&#117;rl(https://e.org/x)"/>',
+            "CSS escape": '<rect width="1" height="1" fill="u\\72 l(https://e.org/x)"/>',
             "relative url": '<rect width="1" height="1" fill="url(other.svg#f)"/>',
             "set href": '<set attributeName="href" to="javascript:alert(1)"/>',
             "animate": '<animate attributeName="fill" to="red"/>',

@@ -13,8 +13,14 @@
 #                       wins over the repo's config). An empty credential.helper
 #                       first clears any helper the repo config adds.
 #  git_snapshot_config  keeps .git/config in memory before the agent runs;
-#  git_restore_config   puts it back after the run, and refuses a .git that is no
-#                       longer a plain directory.
+#  git_restore_config   puts it back after the run and pins git to this .git
+#                       (GIT_DIR, GIT_COMMON_DIR, GIT_WORK_TREE), so a planted
+#                       .git/commondir cannot point it at another config. It
+#                       refuses a .git that is no longer a plain directory, any
+#                       commondir, config.worktree or worktrees/, and any filter,
+#                       diff or merge driver git can still see: a .gitattributes
+#                       from the agent then names a driver that does not exist.
+# Pinning happens only after the run: the agent's own tests may git-init repos.
 
 git_trusted_env() {
   export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_COUNT=7
@@ -34,9 +40,22 @@ git_snapshot_config() {
 }
 
 git_restore_config() {
+  local top=$PWD p drivers
   if [ -L .git ] || [ ! -d .git ] || [ -L .git/config ]; then
     echo "[habitat] .git or .git/config was replaced during the run (fail closed)" >&2
     return 1
   fi
+  for p in .git/commondir .git/config.worktree .git/worktrees; do
+    if [ -e "$p" ] || [ -L "$p" ]; then
+      echo "[habitat] $p appeared during the run (fail closed)" >&2
+      return 1
+    fi
+  done
   printf '%s\n' "$GIT_LOCAL_CONFIG" > .git/config
+  export GIT_DIR="$top/.git" GIT_COMMON_DIR="$top/.git" GIT_WORK_TREE="$top" GIT_ATTR_NOSYSTEM=1
+  drivers=$(git config --name-only --get-regexp '^(filter|diff|merge)\.' 2>/dev/null || true)
+  if [ -n "$drivers" ]; then
+    printf '[habitat] git sees attribute drivers (fail closed):\n%s\n' "$drivers" >&2
+    return 1
+  fi
 }

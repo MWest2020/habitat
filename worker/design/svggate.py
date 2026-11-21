@@ -45,6 +45,8 @@ def _attr_findings(rel, tag, key, value):
     if ns == "" and name not in ATTRS:
         return [f"{rel}: <{tag}> attribute {name!r} not allowed"]
     out = []
+    if "\\" in value:
+        out.append(f"{rel}: <{tag}> {name} contains a backslash (CSS escapes not allowed)")
     if name == "href" and not LOCAL_HREF.fullmatch(value):
         out.append(f"{rel}: <{tag}> href {value[:60]!r} is not a local #id")
     for inner in re.findall(r"url\(([^)]*)\)", value, re.I):
