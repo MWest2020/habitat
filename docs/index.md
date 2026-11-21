@@ -1,6 +1,6 @@
 ---
 status: draft
-last_reviewed: 2026-07-12
+last_reviewed: 2026-11-21
 ---
 
 # Habitat — documentatie
@@ -17,11 +17,15 @@ echte review ze op `current` zet.
 ## Secties
 
 - **Uitleg** — [`explanation/architecture.md`](explanation/architecture.md): waarom
-  Habitat zo gebouwd is (kooi, escalatiematrix, rollback, levensloop van een run).
+  Habitat zo gebouwd is (kooi, escalatiematrix, rollback, levensloop van een run);
+  [`explanation/designer-agent.md`](explanation/designer-agent.md): welke open
+  ontwerp-agents en -tools er zijn en waarom de designer-rol zo gebouwd is.
 - **Referentie** — [`reference/dispatch.md`](reference/dispatch.md): het
   dispatch-contract (`dispatch.sh <rol> <change> <repo>`, env-variabelen, branch- en
   run-report-conventies); [`reference/roles.md`](reference/roles.md): de vier
-  rollen (allowlists, output-schema's, verdict-gates).
+  rollen (allowlists, output-schema's, verdict-gates);
+  [`reference/designer.md`](reference/designer.md): de designer-rol (levering,
+  gates, `designer.sh`).
 
 De formele specificatie staat per change onder
 [`openspec/changes/`](../openspec/changes/).

@@ -1,0 +1,106 @@
+{
+  "permissions": {
+    "defaultMode": "dontAsk",
+    "disableBypassPermissionsMode": "disable",
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Grep",
+      "Glob",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git rm *)",
+      "Bash(git mv *)",
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git diff)",
+      "Bash(git diff *)",
+      "Bash(git log)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(mkdir *)",
+      "Bash(ls *)",
+      "Bash(design-kit *)",
+      "Bash(design-check)",
+      "Bash(design-check *)",
+      "Bash(logo-tool *)",
+      "Bash(playtest-shoot *)"
+    ],
+    "deny": [
+      "Bash(pip *)",
+      "Bash(npm *)",
+      "Bash(uvx *)",
+      "Bash(npx *)",
+      "NotebookEdit",
+      "Bash(git push)",
+      "Bash(git push *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(dd *)",
+      "Bash(xxd *)",
+      "Bash(od *)",
+      "Bash(base64 *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(nc *)",
+      "Bash(kubectl *)",
+      "Bash(docker *)",
+      "Bash(env)",
+      "Bash(printenv *)",
+      "WebFetch",
+      "WebSearch",
+      "Read(./.env)",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.*.local)",
+      "Read(**/.env.development)",
+      "Read(**/.env.dev)",
+      "Read(**/.env.production)",
+      "Read(**/.env.prod)",
+      "Read(**/.env.staging)",
+      "Read(**/.env.test)",
+      "Read(**/.env.secret)",
+      "Read(**/.env.secrets)",
+      "Read(**/secrets/**)",
+      "Read(**/*.pem)",
+      "Read(**/id_rsa*)",
+      "Read(**/.credentials.json)",
+      "Read(//home/**/.claude/**)",
+      "Read(//root/.claude/**)",
+      "Read(//var/run/claude/**)",
+      "Read(//proc/**)",
+      "Read(//sys/**)",
+      "Edit(**/.credentials.json)",
+      "Write(**/.credentials.json)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/opt/habitat/hooks/pretooluse-guard.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/opt/habitat/hooks/stop-design-check.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

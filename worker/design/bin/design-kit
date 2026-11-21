@@ -1,0 +1,4 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# design-kit (change add-designer-role): render, text2path, contrast, fonts.
+exec /opt/habitat/design-venv/bin/python /opt/habitat/design/kit.py "$@"

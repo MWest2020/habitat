@@ -20,8 +20,8 @@ export GIT_PAT
 # subscription-login over ("Not logged in", lokaal bewezen 2026-07-29) en habitat
 # is sub-first. Determinisme komt van dontAsk + expliciete settings + gepind image.
 case "$HABITAT_ROLE" in
-  architect|builder|reviewer|security|playtester) ;;
-  *) fail "onbekende rol '${HABITAT_ROLE}' (architect|builder|reviewer|security|playtester)" ;;
+  architect|builder|reviewer|security|playtester|designer) ;;
+  *) fail "onbekende rol '${HABITAT_ROLE}' (architect|builder|reviewer|security|playtester|designer)" ;;
 esac
 ROLE_SETTINGS="/opt/habitat/settings/${HABITAT_ROLE}.json"
 ROLE_SCHEMA="/opt/habitat/schemas/${HABITAT_ROLE}.json"
@@ -268,6 +268,13 @@ else
   log "geen parseerbare JSON van claude (exit ${CLAUDE_EXIT})"
 fi
 [ "$ARCHITECT_DIRTY" = "1" ] && VERDICT="failed"
+# The designer's own gates (add-designer-role): only design/brand/ changed, and
+# design-check passes, from the image, whatever the agent answered.
+if [ "$HABITAT_ROLE" = "designer" ]; then
+  # shellcheck source=design-gate.sh
+  . /opt/habitat/design-gate.sh
+  designer_gate "$BASE_REF" || { log "designer-gate: run afgekeurd"; VERDICT="failed"; }
+fi
 
 # 5b. Secret-detectie VÓÓR het rapport (reviewer minor): scan de agent-output
 # (bron van run-output.md) en de werkboom; een hit maakt de run failed, zodat
