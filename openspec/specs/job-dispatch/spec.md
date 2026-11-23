@@ -15,7 +15,9 @@ kijkt — en niemand kijkt, want dat is het hele punt van autonoom werk. De gren
 hoort daarom in de Job zelf te zitten en niet in het oordeel van de agent. Dat de
 uitkomst uit de Job-status afleesbaar is volgt daaruit: als de grens toesloeg,
 moet dat zichtbaar anders zijn dan "klaar".
+
 ## Requirements
+
 ### Requirement: Geparametriseerde worker-Job
 
 Een rol-run SHALL als K8s-Job in de namespace `agents` gestart worden vanuit een
@@ -78,3 +80,67 @@ dispatch een niet-nul "geen uitkomst"-status (exit 2) melden.
 - **THEN** blijft dispatch wachten tot de Job een terminale conditie heeft
 - **AND** rapporteert het de echte uitkomst (`Complete`/`Failed`), niet "onbekend"
 
+### Requirement: The builder's own budget
+
+When `HABITAT_BUILDER_BUDGET_USD` is set, dispatch SHALL run the builder role
+with that budget and every other role with `HABITAT_MAX_BUDGET_USD`.
+
+#### Scenario: A builder gets more room than the reviewers
+
+- **WHEN** a chain is dispatched with `HABITAT_BUILDER_BUDGET_USD=10` and `HABITAT_MAX_BUDGET_USD=5`
+- **THEN** the builder's `--max-budget-usd` is 10 and the other roles' is 5
+
+### Requirement: Deadline per role
+
+Without an explicit `ACTIVE_DEADLINE_SECONDS`, dispatch SHALL give a builder
+Job an `activeDeadlineSeconds` of 3600 and every other role 1800, because a
+builder runs the repository's tests, its database tests included, and the
+other roles read and judge.
+
+#### Scenario: A builder gets an hour
+
+- **WHEN** a builder Job is dispatched without `ACTIVE_DEADLINE_SECONDS`
+- **THEN** its `activeDeadlineSeconds` is 3600
+
+#### Scenario: Other roles keep 30 minutes
+
+- **WHEN** an architect, reviewer or security Job is dispatched without
+  `ACTIVE_DEADLINE_SECONDS`
+- **THEN** its `activeDeadlineSeconds` is 1800
+
+### Requirement: One retry on a failed structured answer
+
+When a role's run ends on `error_max_structured_output_retries`, the chain
+SHALL dispatch that role once more before deciding; any other failure SHALL
+stop the chain as before.
+
+#### Scenario: A structured-output hiccup does not stop the chain
+
+- **WHEN** the security role ends on `error_max_structured_output_retries`
+- **THEN** the chain dispatches security once more
+- **AND** stops only if that run fails too
+
+### Requirement: A role's definition comes from the handbook at a pinned commit
+
+When `HABITAT_HANDBOOK_REF` is set, the worker SHALL use
+`docs/agents/seeds/<role>.md` of MWest2020/handbook at that commit as the
+role file, stored outside the work tree, and SHALL stop the run when it cannot
+be fetched; it SHALL NOT fall back to a copy in the target repository.
+
+#### Scenario: The handbook seed is used
+
+- **WHEN** a reviewer run starts with `HABITAT_HANDBOOK_REF` set to a handbook commit that has `docs/agents/seeds/reviewer.md`
+- **THEN** that file is the role file, its body is in the prompt
+- **AND** it does not appear in the role's commit
+
+#### Scenario: A missing seed fails closed
+
+- **WHEN** an architect run starts with a ref at which the handbook has no `docs/agents/seeds/architect.md`
+- **THEN** the run stops with a non-zero exit and a `fail closed` log line
+- **AND** the repository's `.claude/agents/architect.md` is not used
+
+#### Scenario: Without a ref, the repo copy is a logged fallback
+
+- **WHEN** a run starts without `HABITAT_HANDBOOK_REF`
+- **THEN** the target repository's `.claude/agents/<role>.md` is the role file
+- **AND** the log carries a `WARNING` naming the fallback

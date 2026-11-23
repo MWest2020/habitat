@@ -133,3 +133,14 @@ niet worden verruimd.
 
 - **WHEN** de `go.mod` van een doelrepo een nieuwere Go-versie eist dan de image
 - **THEN** faalt de build op `GOTOOLCHAIN=local` en downloadt Go niets
+
+### Requirement: A browser for the playtester
+
+The worker image SHALL contain a pinned Python Playwright with its Chromium
+headless shell and the `playtest-shoot` command, so the playtester can serve and
+open an app without network access.
+
+#### Scenario: playtest-shoot in the cage
+
+- **WHEN** the playtester runs `playtest-shoot --serve-dir web`
+- **THEN** screenshots appear in `/work/playtest/` and the command prints a JSON summary

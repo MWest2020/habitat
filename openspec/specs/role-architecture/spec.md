@@ -15,7 +15,9 @@ zoeker die kan schrijven is geen zoeker. En de uitvoer is **gestructureerd en
 gate-baar**: proza kun je niet automatisch beoordelen, dus dan wordt de mens de
 poort en is de autonomie weg. De architect-rol die plant zonder te bouwen is
 daarvan het scherpste geval: zijn waarde zit er juist in dat hij het níet doet.
+
 ## Requirements
+
 ### Requirement: Roles run with enforced minimal toolsets
 
 The worker SHALL run every role with a deny-by-default permission
@@ -45,6 +47,13 @@ isolation boundary.
   `.env.example`/`.env.sample` in the target repo) as part of its change
 - **THEN** the edit is permitted, while a read of `.env`, `.env.local`,
   `.env.production` or another filled-in environment file is still denied
+
+#### Scenario: A builder runs the repository's own gate
+
+- **WHEN** a builder run calls `bash verify.sh`, `python3 -m unittest` or
+  `python3 -m pytest` in the target repository
+- **THEN** the command runs, while `python3 -c ...`, `bash -c ...` or a bare
+  `python3 <script>` is still denied
 
 ### Requirement: Roles produce structured, gate-able output
 
@@ -83,3 +92,20 @@ NOT modify repository files.
 - **THEN** the working tree is unchanged and the plan is present in the
   structured output
 
+### Requirement: A playtester role looks at the result
+
+The chain SHALL run a `playtester` role after the reviewer and before security
+when the target repository has `.factory/playtest.yml` and the change touches
+one of its `paths`. The role SHALL be read-only, SHALL open the app in headless
+Chromium, SHALL read its own screenshots, and SHALL give PASS or FAIL in the
+reviewer's schema plus a `screenshots` list. A FAIL SHALL stop the chain.
+
+#### Scenario: A UI change in an opted-in repository
+
+- **WHEN** a change touches `web/index.html` in a repository whose playtest config lists `web/**`
+- **THEN** the chain runs the playtester between reviewer and security
+
+#### Scenario: No opt-in
+
+- **WHEN** the repository has no `.factory/playtest.yml`
+- **THEN** the chain runs architect, builder, reviewer and security as before

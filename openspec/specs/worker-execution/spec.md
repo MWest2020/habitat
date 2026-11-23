@@ -228,3 +228,70 @@ The worker SHALL push a role's branch up to four times, with increasing waits be
 
 - **WHEN** every push attempt fails
 - **THEN** the role fails as it does today, after the last attempt
+
+### Requirement: The builder can install and test a Node project
+
+The builder role SHALL be allowed to run `npm install` (with or without
+package names), `npm test` and `node --test`, so that it can create a
+lockfile and run a Node repository's tests itself, not hand in tests that
+never ran.
+
+#### Scenario: A new package gets a lockfile and green tests
+
+- **WHEN** a change adds a `package.json`
+- **THEN** the builder can run `npm install` to write `package-lock.json`
+- **AND** run the tests with `npm test` or `node --test`
+
+### Requirement: The role knows its structured answer is final
+
+The role prompt SHALL tell the role that its structured answer is its final
+verdict, ends the run, is given exactly once at the end, and is never a
+trial call, because under `--json-schema` the first structured answer is the
+one the chain reads.
+
+#### Scenario: A role does not try out the schema
+
+- **WHEN** a role runs under `--json-schema`
+- **THEN** its prompt states that the structured answer is final and must not
+  be a trial call
+
+### Requirement: Who pays for a worker
+
+Dispatch SHALL run a worker on the subscription by default, and with
+`HABITAT_AUTH=api` on the API key from Secret `habitat-api-key`, in which case
+the worker SHALL have neither the setup-token nor the subscription
+credentials, so it cannot fall back to the subscription. Any other value
+SHALL stop the dispatch.
+
+#### Scenario: An api-mode worker runs on the key
+
+- **WHEN** a Job is dispatched with `HABITAT_AUTH=api`
+- **THEN** the worker's `ANTHROPIC_API_KEY` comes from `habitat-api-key`
+- **AND** it has no `CLAUDE_CODE_OAUTH_TOKEN` and no mounted credentials
+
+#### Scenario: The default is unchanged
+
+- **WHEN** a Job is dispatched without `HABITAT_AUTH`
+- **THEN** it uses the setup-token and the optional credentials, as before
+
+### Requirement: A throwaway test database in every worker
+
+Every worker Job SHALL run a PostgreSQL 16 database as a native sidecar,
+reachable only on the pod's loopback, started before the worker and stopped
+with it, and SHALL give the worker its connection URL as
+`HABITAT_TEST_DATABASE_URL` and as `WORDSWORTH_TEST_DATABASE_URL`, so a role
+can run a repository's database tests instead of skipping them. The sidecar
+SHALL run without root, without capabilities and without privilege
+escalation, and its data SHALL NOT outlive the pod.
+
+#### Scenario: The worker starts once the database answers
+
+- **WHEN** a worker Job starts
+- **THEN** the worker container starts only after the sidecar's
+  `pg_isready` probe succeeds
+- **AND** a connection to `HABITAT_TEST_DATABASE_URL` succeeds
+
+#### Scenario: Nothing survives the run
+
+- **WHEN** the worker container ends
+- **THEN** the sidecar stops and its `emptyDir` is removed with the pod
