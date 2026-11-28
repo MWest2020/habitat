@@ -59,9 +59,14 @@ OK='[{"type":"SuccessCriteriaMet","status":"True","reason":"CompletionsReached"}
 
 r=$(run '[]' "$FT" "$FT" "$FD")
 [[ "$r" == "1 "*TIME-OUT* ]] && ok "dispatch: FailureTarget then Failed is TIME-OUT, exit 1" || bad "dispatch: FailureTarget then Failed ($r)"
+eq "dispatch: it waits past FailureTarget until Failed" "$(cat "$T/n")" 4
 r=$(run '[]' "$FT")
 [[ "$r" == "1 "*TIME-OUT* ]] && ok "dispatch: FailureTarget past the grace is TIME-OUT, exit 1" || bad "dispatch: FailureTarget past the grace ($r)"
-[ "$(cat "$T/n")" -le 10 ] && ok "dispatch: the grace ends the wait, not WAIT_MAX" || bad "dispatch: waited $(cat "$T/n") polls"
+# grace 15 s at 5 s a poll: one pending poll, then FailureTarget at 5, 10, 15, 20.
+eq "dispatch: the grace ends the wait, not sooner and not WAIT_MAX" "$(cat "$T/n")" 5
+SC='[{"type":"SuccessCriteriaMet","status":"True","reason":"CompletionsReached"}]'
+r=$(run '[]' "$SC")
+[[ "$r" == "0 "*AFGEROND* ]] && ok "dispatch: SuccessCriteriaMet past the grace is AFGEROND, exit 0" || bad "dispatch: SuccessCriteriaMet alone ($r)"
 r=$(run '[]' "$OK")
 [[ "$r" == "0 "*AFGEROND* ]] && ok "dispatch: Complete is AFGEROND, exit 0" || bad "dispatch: Complete ($r)"
 r=$(run '[]')
