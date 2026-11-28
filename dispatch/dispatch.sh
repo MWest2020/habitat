@@ -114,25 +114,27 @@ envsubst "$VARS" < "$HERE/job-template.yaml" | $KUBECTL apply -f -
 # slikt dat op, en elke run — ook een geslaagde — eindigt als "onbekend" met
 # exit 2. Waargenomen 2026-09-05 op een reviewer-run die gewoon PASS was.
 job_conditions() {
-  $KUBECTL -n agents get job "$1" -o json 2>/dev/null | python3 -c '
-import json, sys
-try:
-    d = json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-cs = ((d.get("status") or {}).get("conditions")) or []
-print(" ".join("%s=%s" % (c.get("type"), c.get("reason") or "")
-               for c in cs if c.get("status") == "True"))
-' 2>/dev/null || true
+  $KUBECTL -n agents get job "$1" -o json 2>/dev/null \
+    | python3 "$HERE/job_conditions.py" 2>/dev/null || true
 }
+# complete | timeout | failed:<reason> | interim | pending (see job_conditions.py)
+outcome() { python3 "$HERE/job_conditions.py" outcome "$@"; }
 
 WAIT_MAX=$(( ACTIVE_DEADLINE_SECONDS + 600 ))
+# FailureTarget/SuccessCriteriaMet are interim (K8s >= 1.31): wait for Failed or
+# Complete, at most INTERIM_GRACE seconds, then the interim condition counts.
+INTERIM_GRACE=${INTERIM_GRACE:-300}
 conds=""
 logs_streamed=0
 waited=0
+interim_since=""
 while [ "$waited" -lt "$WAIT_MAX" ]; do
   conds=$(job_conditions "$JOB_NAME")
-  [ -n "$conds" ] && break
+  case "$(outcome "$conds")" in
+    complete|timeout|failed:*) break ;;
+    interim) interim_since=${interim_since:-$waited}
+             [ $(( waited - interim_since )) -lt "$INTERIM_GRACE" ] || break ;;
+  esac
   if [ "$logs_streamed" -eq 0 ]; then
     phase=$($KUBECTL -n agents get pods -l job-name="$JOB_NAME" \
              -o jsonpath='{.items[0].status.phase}' 2>/dev/null || true)
@@ -183,18 +185,12 @@ find "$LOGDIR" -maxdepth 1 -name "*.log" -mtime +14 -delete 2>/dev/null || true
 
 echo "[dispatch] condities: ${conds:-onbekend}"
 
-if echo "$conds" | grep -qi 'Failed'; then
-  reason=$(echo "$conds" | grep -o 'Failed=[^ ]*' | cut -d= -f2)
-  if [ "$reason" = "DeadlineExceeded" ]; then
-    echo "[dispatch] TIME-OUT — branch mogelijk deels/niet gepusht"
-  else
-    echo "[dispatch] MISLUKT (${reason:-onbekend})"
-  fi
-  exit 1
-elif echo "$conds" | grep -qi 'Complete'; then
-  echo "[dispatch] AFGEROND — lees run-report.json op branch ${BRANCH}"
-  exit 0
-fi
+state=$(outcome --final "$conds" || true)
+case "$state" in
+  complete) echo "[dispatch] AFGEROND — lees run-report.json op branch ${BRANCH}"; exit 0 ;;
+  timeout)  echo "[dispatch] TIME-OUT — branch mogelijk deels/niet gepusht"; exit 1 ;;
+  failed:*) echo "[dispatch] MISLUKT (${state#failed:})"; exit 1 ;;
+esac
 # Geen terminale conditie binnen WAIT_MAX (deadline + buffer): iets zit vast
 # (bv. onplanbare pod, image-pull-backoff die de deadline nooit haalt).
 echo "[dispatch] GEEN uitkomst binnen ${WAIT_MAX}s — controleer de Job handmatig"; exit 2
