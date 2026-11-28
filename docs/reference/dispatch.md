@@ -1,6 +1,6 @@
 ---
 status: draft
-last_reviewed: 2026-11-21
+last_reviewed: 2026-11-28
 ---
 
 # Dispatch-contract
@@ -281,6 +281,18 @@ image-pull, zodat een trage start niet als "onbekend" eindigt.
 | `Failed` (`DeadlineExceeded`) | `TIME-OUT — branch mogelijk deels/niet gepusht` | `1` |
 | `Failed` (overig) | `MISLUKT (<reason>)` | `1` |
 | geen conditie binnen de timeout | `GEEN uitkomst binnen <n>s` | `2` |
+
+**Tussencondities (Kubernetes ≥ 1.31).** De Job-controller zet eerst
+`FailureTarget` of `SuccessCriteriaMet` en pas `Failed` of `Complete` als de
+pods weg zijn. Dispatch wacht daarop, hooguit `INTERIM_GRACE` seconden
+(default 300); daarna telt de tussenconditie als uitkomst, met dezelfde reden
+(`FailureTarget=DeadlineExceeded` → `TIME-OUT`, exit 1). De beslissing staat in
+`dispatch/job_conditions.py` (getest door `worker/test-dispatch-conditions.sh`).
+Tot 2026-11-28 nam dispatch elke conditie als einde en zocht het naar
+`Failed`, dat `FailureTarget` niet bevat: een builder die zijn deadline haalde
+eindigde als `GEEN uitkomst binnen 4200s` met exit 2, na een uur in plaats van
+4200 s (wordsworth #541 op 2026-11-27, synthetic-long-corpus op 2026-11-15,
+twee `BackoffLimitExceeded`-runs op 2026-11-17).
 
 De logs worden gestreamd (`kubectl logs -f` zodra de pod draait) en
 gearchiveerd naar `$HABITAT_LOGDIR/<job-naam>.log`.
